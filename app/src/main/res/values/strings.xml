@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">PhotosShare</string>
     <string name="action_settings">Settings</string>
+    <string name="create_event">Create Event</string>
+    <string name="eventNameLabel">Event Name</string>
+    <string name="action_done">Done</string>
+    <string name="event_name">Event Name</string>
 </resources>
