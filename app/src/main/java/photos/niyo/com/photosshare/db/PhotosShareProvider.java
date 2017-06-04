@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.support.annotation.NonNull;
@@ -29,7 +28,7 @@ public class PhotosShareProvider extends ContentProvider {
 
     static {
         sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
-        sUriMatcher.addURI(Constants.AUTORITY, Constants.FOLDERS_URI, FOLDERS_URI_CODE);
+        sUriMatcher.addURI(Constants.AUTHORITY, Constants.FOLDERS_URI_STR, FOLDERS_URI_CODE);
 
         sFoldersProjectionMap = new HashMap<>();
         sFoldersProjectionMap.put(PhotosShareColumns._ID, PhotosShareColumns._ID);
