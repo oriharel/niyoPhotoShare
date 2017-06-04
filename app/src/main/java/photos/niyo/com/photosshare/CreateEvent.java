@@ -16,13 +16,23 @@ import android.widget.EditText;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.drive.Drive;
+import com.google.android.gms.drive.DriveApi;
+import com.google.android.gms.drive.DriveContents;
+import com.google.android.gms.drive.DriveFolder;
+import com.google.android.gms.drive.MetadataChangeSet;
+import com.google.android.gms.drive.metadata.CustomPropertyKey;
 
 public class CreateEvent extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     GoogleApiClient mGoogleApiClient;
     public static final String LOG_TAG = CreateEvent.class.getSimpleName();
-    private boolean fileOperation = false;
+
+    private void CreateFolderOnGoogleDrive(DriveApi.DriveContentsResult result) {
+        final DriveContents driveContents = result.getDriveContents();
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,8 +108,33 @@ public class CreateEvent extends AppCompatActivity implements GoogleApiClient.Co
         super.onPause();
     }
 
-    private void createEventFolder(EditText eventNameET) {
+    ResultCallback<DriveFolder.DriveFolderResult> folderCreatedCallback = new
+            ResultCallback<DriveFolder.DriveFolderResult>() {
+                @Override
+                public void onResult(@NonNull DriveFolder.DriveFolderResult result) {
+                    Log.d(LOG_TAG, "folder creation returned");
+                    if (!result.getStatus().isSuccess()) {
+                        Snackbar.make(findViewById(R.id.eventName),
+                                "Error while trying to create the folder", Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+                        return;
+                    }
+                    Snackbar.make(findViewById(R.id.eventName), "Created a folder: " +
+                            result.getDriveFolder().getDriveId(),
+                            Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                }
+            };
 
+    private void createEventFolder(EditText eventNameET) {
+        Log.d(LOG_TAG, "createEventFolder started");
+        CustomPropertyKey appKey = new CustomPropertyKey("originator", CustomPropertyKey.PRIVATE);
+        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+                .setTitle(eventNameET.getText().toString())
+                .setCustomProperty(appKey, getPackageName()).build();
+        Log.d(LOG_TAG, "creating folder "+eventNameET.getText());
+        Drive.DriveApi.getRootFolder(mGoogleApiClient).createFolder(
+                mGoogleApiClient, changeSet).setResultCallback(folderCreatedCallback);
     }
 
     @Override

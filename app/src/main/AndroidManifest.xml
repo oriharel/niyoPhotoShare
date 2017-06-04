@@ -13,10 +13,10 @@
         android:theme="@style/AppTheme">
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBs4btTWYs8zoxljAvrs3V6H8zzVK_M3Yg"/>
+            android:value="AIzaSyBs4btTWYs8zoxljAvrs3V6H8zzVK_M3Yg" />
         <meta-data
             android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version"/>
+            android:value="@integer/google_play_services_version" />
 
         <activity
             android:name=".MainActivity"
@@ -31,8 +31,14 @@
         <activity
             android:name=".CreateEvent"
             android:label="@string/create_event"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:parentActivityName=".MainActivity"/>
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <provider
+            android:name=".db.PhotosShareProvider"
+            android:authorities="com.niyo.photos.provider"
+            android:enabled="true"
+            android:exported="true"></provider>
     </application>
 
 </manifest>
