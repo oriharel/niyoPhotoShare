@@ -1,15 +1,23 @@
 package photos.niyo.com.photosshare;
 
+import android.Manifest;
 import android.app.LoaderManager;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -19,11 +27,12 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
+
+import static photos.niyo.com.photosshare.PhotosContentJob.MEDIA_URI;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     public static final String LOG_TAG = MainActivity.class.getSimpleName();
@@ -34,6 +43,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private LinearLayoutManager mLinearLayoutManager;
     Handler mHandler = new Handler();
     private ContentObserver mObserver;
+    private PhotosContentJob job;
+    private JobScheduler mJobScheduler;
+    JobInfo JOB_INFO;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +86,65 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         };
         registerForChanges();
+        requestPermissionForPhotosRead();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case Constants.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    schedulePhotosJob();
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+
+    private void requestPermissionForPhotosRead() {
+        Log.d(LOG_TAG, "requestPermissionForPhotosRead started");
+        int permissionCheck = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            Log.d(LOG_TAG, "needs user to authorize photos read");
+            ActivityCompat.requestPermissions(
+                    this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    Constants.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+        }
+        else {
+            Log.d(LOG_TAG, "permission to photos read already granted");
+            schedulePhotosJob();
+        }
+    }
+
+    private void schedulePhotosJob() {
+        mJobScheduler = (JobScheduler)
+                getSystemService( Context.JOB_SCHEDULER_SERVICE );
+
+        JobInfo.Builder builder = new JobInfo.Builder( 1,
+                new ComponentName( getPackageName(),PhotosContentJob.class.getName() ) );
+        builder.addTriggerContentUri(new JobInfo.TriggerContentUri(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS));
+        // Also look for general reports of changes in the overall provider.
+        builder.addTriggerContentUri(new JobInfo.TriggerContentUri(MEDIA_URI, 0));
+
+        JOB_INFO = builder.build();
+        mJobScheduler.schedule(JOB_INFO);
+        Log.i(LOG_TAG, "JOB SCHEDULED!");
     }
 
     private void registerForChanges() {
