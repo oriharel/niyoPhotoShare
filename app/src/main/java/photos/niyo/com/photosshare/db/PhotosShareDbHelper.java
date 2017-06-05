@@ -19,7 +19,7 @@ public class PhotosShareDbHelper extends SQLiteOpenHelper {
                     + PhotosShareColumns._ID + " integer primary key autoincrement, "
                     + PhotosShareColumns.FOLDER_ID + " TEXT, "
                     + PhotosShareColumns.FOLDER_NAME + " TEXT, "
-                    + PhotosShareColumns.CREATE_AT + " DATE, "
+                    + PhotosShareColumns.CREATE_AT + " BIGINT, "
                     + PhotosShareColumns.SHARED_WITH + " ARRAY, "
                     + PhotosShareColumns.LOCATION + " Decimal(9,6));";
 

@@ -5,8 +5,10 @@ import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -30,6 +32,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private List<Folder> mFoldersList;
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
+    Handler mHandler = new Handler();
+    private ContentObserver mObserver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +43,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        final Context context = this;
+        final MainActivity context = this;
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -56,12 +60,36 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mRecyclerView.setAdapter(mAdapter);
         findViewById(R.id.listContainer).setVisibility(View.GONE);
         findViewById(R.id.emptyView).setVisibility(View.GONE);
+
+        mObserver = new ContentObserver(mHandler) {
+            @Override
+            public boolean deliverSelfNotifications() {
+                return super.deliverSelfNotifications();
+            }
+
+            @Override
+            public void onChange(boolean selfChange) {
+                Log.d(LOG_TAG, "onChange called from observer");
+                getLoaderManager().restartLoader(0, null, context);
+            }
+        };
+        registerForChanges();
+    }
+
+    private void registerForChanges() {
+        getContentResolver().registerContentObserver(Constants.FOLDERS_URI, false, mObserver);
     }
 
     @Override
     protected void onResume(){
         super.onResume();
         getLoaderManager().restartLoader(0, null, this);
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        getContentResolver().unregisterContentObserver(mObserver);
     }
 
     @Override
@@ -95,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         Log.d(LOG_TAG, "onLoadFinished started");
-        mFoldersList = new ArrayList<>();
+        mFoldersList.clear();
 
         if (cursor.moveToFirst()) {
             findViewById(R.id.listContainer).setVisibility(View.VISIBLE);
@@ -107,15 +135,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 int colCreatedAtIndex = cursor.getColumnIndex(PhotosShareColumns.CREATE_AT);
                 String createdAt = cursor.getString(colCreatedAtIndex);
                 Folder folder = new Folder();
+                Log.d(LOG_TAG, "adding "+foldeName);
                 folder.setName(foldeName);
-                folder.setCreatedAt(new Date(Long.valueOf(createdAt)));
+                folder.setCreatedAt(Long.valueOf(createdAt));
                 mFoldersList.add(folder);
+                cursor.moveToNext();
             }
+
+            mAdapter.notifyItemInserted(mFoldersList.size());
 
         }
         else {
             showEmptyPage();
         }
+
+        cursor.close();
 
     }
 

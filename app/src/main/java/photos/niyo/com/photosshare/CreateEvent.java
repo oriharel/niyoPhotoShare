@@ -26,8 +26,12 @@ import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.MetadataChangeSet;
 import com.google.android.gms.drive.metadata.CustomPropertyKey;
 
+import java.sql.Date;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+
+import photos.niyo.com.photosshare.db.InsertNewFolderTask;
 
 public class CreateEvent extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
@@ -128,13 +132,35 @@ public class CreateEvent extends AppCompatActivity implements GoogleApiClient.Co
 
     private void createEventFolder(EditText eventNameET) {
         Log.d(LOG_TAG, "createEventFolder started");
-        CustomPropertyKey appKey = new CustomPropertyKey("originator", CustomPropertyKey.PRIVATE);
-        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-                .setTitle(eventNameET.getText().toString())
-                .setCustomProperty(appKey, getPackageName()).build();
-        Log.d(LOG_TAG, "creating folder "+eventNameET.getText());
-        Drive.DriveApi.getRootFolder(mGoogleApiClient).createFolder(
-                mGoogleApiClient, changeSet).setResultCallback(folderCreatedCallback);
+//        CustomPropertyKey appKey = new CustomPropertyKey("originator", CustomPropertyKey.PRIVATE);
+//        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+//                .setTitle(eventNameET.getText().toString())
+//                .setCustomProperty(appKey, getPackageName()).build();
+//        Log.d(LOG_TAG, "creating folder "+eventNameET.getText());
+//        Drive.DriveApi.getRootFolder(mGoogleApiClient).createFolder(
+//                mGoogleApiClient, changeSet).setResultCallback(folderCreatedCallback);
+
+        insertNewFolderToDb(eventNameET.getText().toString());
+    }
+
+    private void insertNewFolderToDb(String folderName) {
+        ServiceCaller caller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                finish();
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+
+            }
+        };
+
+        InsertNewFolderTask task = new InsertNewFolderTask(this, caller);
+        Folder folder = new Folder();
+        folder.setName(folderName);
+        folder.setCreatedAt(Calendar.getInstance().getTimeInMillis());
+        task.execute(folder);
     }
 
     @Override

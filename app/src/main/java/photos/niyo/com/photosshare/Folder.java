@@ -11,7 +11,7 @@ public class Folder {
         return _name;
     }
 
-    public Date getCreatedAt() {
+    public Long getCreatedAt() {
         return _createdAt;
     }
 
@@ -19,10 +19,10 @@ public class Folder {
         _name = name;
     }
 
-    public void setCreatedAt(Date creationDate) {
+    public void setCreatedAt(Long creationDate) {
         _createdAt = creationDate;
     }
 
     private String _name;
-    private Date _createdAt;
+    private Long _createdAt;
 }

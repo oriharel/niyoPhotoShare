@@ -35,6 +35,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
     }
 
     public void bindFolder(Folder folder) {
+        Log.d(LOG_TAG, "bindFolder started");
         mFolder = folder;
         mItemDate.setText(folder.getCreatedAt().toString());
         mItemDescription.setText(folder.getName());
