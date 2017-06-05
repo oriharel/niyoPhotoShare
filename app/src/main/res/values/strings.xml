@@ -5,4 +5,5 @@
     <string name="eventNameLabel">Event Name</string>
     <string name="action_done">Done</string>
     <string name="event_name">Event Name</string>
+    <string name="no_events_text">There are no events</string>
 </resources>

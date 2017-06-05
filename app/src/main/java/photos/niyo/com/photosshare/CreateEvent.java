@@ -7,6 +7,8 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -24,15 +26,13 @@ import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.MetadataChangeSet;
 import com.google.android.gms.drive.metadata.CustomPropertyKey;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CreateEvent extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     GoogleApiClient mGoogleApiClient;
     public static final String LOG_TAG = CreateEvent.class.getSimpleName();
-
-    private void CreateFolderOnGoogleDrive(DriveApi.DriveContentsResult result) {
-        final DriveContents driveContents = result.getDriveContents();
-
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

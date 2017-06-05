@@ -9,12 +9,27 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
+
+import photos.niyo.com.photosshare.db.PhotosShareColumns;
+
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+    public static final String LOG_TAG = MainActivity.class.getSimpleName();
+
+    private FoldersListAdapter mAdapter;
+    private List<Folder> mFoldersList;
+    private RecyclerView mRecyclerView;
+    private LinearLayoutManager mLinearLayoutManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +47,15 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 startActivity(intent);
             }
         });
+        mRecyclerView = (RecyclerView) findViewById(R.id.foldersList);
+        mLinearLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLinearLayoutManager);
+
+        mFoldersList = new ArrayList<>();
+        mAdapter = new FoldersListAdapter(mFoldersList);
+        mRecyclerView.setAdapter(mAdapter);
+        findViewById(R.id.listContainer).setVisibility(View.GONE);
+        findViewById(R.id.emptyView).setVisibility(View.GONE);
     }
 
     @Override
@@ -69,8 +93,36 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        Log.d(LOG_TAG, "onLoadFinished started");
+        mFoldersList = new ArrayList<>();
 
+        if (cursor.moveToFirst()) {
+            findViewById(R.id.listContainer).setVisibility(View.VISIBLE);
+            findViewById(R.id.emptyView).setVisibility(View.GONE);
+            while (!cursor.isAfterLast()) {
+                int colFolderNameIndex = cursor.getColumnIndex(PhotosShareColumns.FOLDER_NAME);
+                String foldeName = cursor.getString(colFolderNameIndex);
+
+                int colCreatedAtIndex = cursor.getColumnIndex(PhotosShareColumns.CREATE_AT);
+                String createdAt = cursor.getString(colCreatedAtIndex);
+                Folder folder = new Folder();
+                folder.setName(foldeName);
+                folder.setCreatedAt(new Date(Long.valueOf(createdAt)));
+                mFoldersList.add(folder);
+            }
+
+        }
+        else {
+            showEmptyPage();
+        }
+
+    }
+
+    private void showEmptyPage() {
+        Log.d(LOG_TAG, "showEmptyPage started");
+        findViewById(R.id.emptyView).setVisibility(View.VISIBLE);
+        findViewById(R.id.listContainer).setVisibility(View.GONE);
     }
 
     @Override
