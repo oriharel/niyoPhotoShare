@@ -32,7 +32,7 @@ public class InsertNewFolderTask extends AsyncTask<Folder, Void, Boolean> {
         values.put(PhotosShareColumns.CREATE_AT, folder.getCreatedAt());
         Uri result = _context.getContentResolver().insert(Constants.FOLDERS_URI, values);
 
-        Log.d(LOG_TAG, "added a friend name "+folder.getName()+" result was "+result.toString());
+        Log.d(LOG_TAG, "added a folder name "+folder.getName()+" result was "+result.toString());
         return true;
     }
 
