@@ -29,4 +29,17 @@
         android:layout_marginRight="@dimen/side_margin"
         android:ems="10"
         android:inputType="textPersonName" />
+
+    <Button
+        android:id="@+id/createFolderBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Create" />
+
+    <Button
+        android:id="@+id/permBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Permission" />
+
 </LinearLayout>

@@ -1,42 +1,55 @@
 package photos.niyo.com.photosshare;
 
-import android.content.IntentSender;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.design.widget.Snackbar;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.drive.Drive;
-import com.google.android.gms.drive.DriveApi;
-import com.google.android.gms.drive.DriveContents;
-import com.google.android.gms.drive.DriveFolder;
-import com.google.android.gms.drive.MetadataChangeSet;
-import com.google.android.gms.drive.metadata.CustomPropertyKey;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.googleapis.batch.BatchRequest;
+import com.google.api.client.googleapis.batch.json.JsonBatchCallback;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException;
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
+import com.google.api.client.googleapis.json.GoogleJsonError;
+import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.ExponentialBackOff;
+import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.drive.model.File;
+import com.google.api.services.drive.model.Permission;
 
-import java.sql.Date;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Calendar;
-import java.util.List;
 
 import photos.niyo.com.photosshare.db.InsertNewFolderTask;
 
-public class CreateEvent extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+import static photos.niyo.com.photosshare.MainActivity.LOG_TAG;
+import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
+import static photos.niyo.com.photosshare.MainActivity.REQUEST_AUTHORIZATION;
+import static photos.niyo.com.photosshare.MainActivity.REQUEST_GOOGLE_PLAY_SERVICES;
 
-    GoogleApiClient mGoogleApiClient;
+public class CreateEvent extends AppCompatActivity  {
+
     public static final String LOG_TAG = CreateEvent.class.getSimpleName();
+
+    String mFolderId = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +67,175 @@ public class CreateEvent extends AppCompatActivity implements GoogleApiClient.Co
             ab.setDisplayHomeAsUpEnabled(true);
         }
 
+        Button createBtn = (Button)findViewById(R.id.createFolderBtn);
+        createBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                EditText eventNameET = (EditText)findViewById(R.id.eventName);
+                createEventFolder(eventNameET);
+            }
+        });
 
+        Button permButton = (Button)findViewById(R.id.permBtn);
+        permButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                createPermission();
+            }
+        });
+
+
+    }
+
+    private void createPermission() {
+        if (mFolderId != null) {
+            String[] SCOPES = { DriveScopes.DRIVE };
+
+            GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                    getApplicationContext(), Arrays.asList(SCOPES))
+                    .setBackOff(new ExponentialBackOff());
+            SharedPreferences pref = getApplicationContext().getSharedPreferences("app", Context.MODE_PRIVATE);
+            String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
+            if (accountName != null) {
+                credential.setSelectedAccountName(accountName);
+            }
+
+            ServiceCaller caller = new ServiceCaller() {
+                @Override
+                public void success(Object data) {
+
+                }
+
+                @Override
+                public void failure(Object data, String description) {
+
+                }
+            };
+            new MakePermissionRequest(credential, caller, this).execute(mFolderId);
+
+        }
+        else {
+            Log.e(LOG_TAG, "Error. folder id is null");
+        }
+    }
+
+    private class MakePermissionRequest extends AsyncTask<String, Void, Boolean> {
+        private com.google.api.services.drive.Drive mService = null;
+        private Exception mLastError = null;
+        private Context mContext;
+        ServiceCaller mCaller;
+
+        MakePermissionRequest(GoogleAccountCredential credential, ServiceCaller caller, Context context) {
+            HttpTransport transport = AndroidHttp.newCompatibleTransport();
+            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+            Log.d(LOG_TAG, "making request with credentials: "+credential.getSelectedAccountName());
+            mService = new com.google.api.services.drive.Drive.Builder(
+                    transport, jsonFactory, credential)
+                    .setApplicationName("Drive API Android Quickstart")
+                    .build();
+            mContext = context;
+            mCaller = caller;
+        }
+
+        JsonBatchCallback<Permission> callback = new JsonBatchCallback<Permission>() {
+            @Override
+            public void onFailure(GoogleJsonError e,
+                                  HttpHeaders responseHeaders)
+                    throws IOException {
+                // Handle error
+                Log.e(LOG_TAG, "mService.permissions(): "+e.getMessage());
+            }
+
+            @Override
+            public void onSuccess(Permission permission,
+                                  HttpHeaders responseHeaders)
+                    throws IOException {
+                Log.d(LOG_TAG, "mService.permissions() Permission ID: " + permission.getId());
+            }
+        };
+
+        /**
+         * Background task to call Drive API.
+         * @param params no parameters needed for this task.
+         */
+        @Override
+        protected Boolean doInBackground(String... params) {
+            Log.d(LOG_TAG, "[MakePermissionRequest] doInBackground started");
+            try {
+                return createPermissionBatch(params[0]);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "[MakePermissionRequest] Error!! " ,e);
+                mLastError = e;
+                cancel(true);
+                return false;
+            }
+        }
+
+        /**
+         * Fetch a list of up to 10 file names and IDs.
+         * @return List of Strings describing files, or an empty list if no files
+         *         found.
+         * @throws IOException
+         */
+        private Boolean createPermissionBatch(String fileId) throws IOException {
+            // Get a list of up to 10 files.
+            Log.d(LOG_TAG, "createPermissionBatch started");
+            BatchRequest batch = mService.batch();
+            Permission userPermission = new Permission()
+                    .setType("user")
+                    .setRole("writer")
+                    .setEmailAddress("ori.harel@capriza.com");
+            mService.permissions().create(fileId, userPermission)
+                    .setFields("id")
+                    .queue(batch, callback);
+            batch.execute();
+            return true;
+        }
+
+
+        @Override
+        protected void onPreExecute() {
+//            mOutputText.setText("");
+//            mProgress.show();
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+//            mProgress.hide();
+//            if (output == null || output.size() == 0) {
+//                Toast.makeText(mContext, "No results returned.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                output.add(0, "Data retrieved using the Drive API:");
+////                Toast.makeText.setText(TextUtils.join("\n", output));
+//            }
+            if (result) {
+                mCaller.success(true);
+            }
+            else {
+                mCaller.failure(result, "error");
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+//            mProgress.hide();
+            if (mLastError != null) {
+                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
+                    showGooglePlayServicesAvailabilityErrorDialog(
+                            ((GooglePlayServicesAvailabilityIOException) mLastError)
+                                    .getConnectionStatusCode());
+                } else if (mLastError instanceof UserRecoverableAuthIOException) {
+                    startActivityForResult(
+                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
+                            REQUEST_AUTHORIZATION);
+                } else {
+                    Toast.makeText(mContext, "The following error occurred:\n"
+                            + mLastError.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            } else {
+                Toast.makeText(mContext, "Request cancelled.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     @Override
@@ -73,8 +254,7 @@ public class CreateEvent extends AppCompatActivity implements GoogleApiClient.Co
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_submit) {
-            EditText eventNameET = (EditText)findViewById(R.id.eventName);
-            createEventFolder(eventNameET);
+            finish();
             return true;
         }
         if (id == android.R.id.home) {
@@ -89,65 +269,188 @@ public class CreateEvent extends AppCompatActivity implements GoogleApiClient.Co
     protected void onResume(){
         super.onResume();
         Log.d(LOG_TAG, "checking if api client exists");
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addApi(Drive.API)
-                    .addScope(Drive.SCOPE_FILE)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .build();
-            mGoogleApiClient.connect();
-        }
 
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (mGoogleApiClient != null) {
-
-            // disconnect Google Android Drive API connection.
-            mGoogleApiClient.disconnect();
-        }
-        super.onPause();
     }
 
-    ResultCallback<DriveFolder.DriveFolderResult> folderCreatedCallback = new
-            ResultCallback<DriveFolder.DriveFolderResult>() {
-                @Override
-                public void onResult(@NonNull DriveFolder.DriveFolderResult result) {
-                    Log.d(LOG_TAG, "folder creation returned");
-                    if (!result.getStatus().isSuccess()) {
-                        Snackbar.make(findViewById(R.id.eventName),
-                                "Error while trying to create the folder", Snackbar.LENGTH_LONG)
-                                .setAction("Action", null).show();
-                        return;
-                    }
-                    Snackbar.make(findViewById(R.id.eventName), "Created a folder: " +
-                            result.getDriveFolder().getDriveId(),
-                            Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                }
-            };
 
     private void createEventFolder(EditText eventNameET) {
         Log.d(LOG_TAG, "createEventFolder started");
-//        CustomPropertyKey appKey = new CustomPropertyKey("originator", CustomPropertyKey.PRIVATE);
-//        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-//                .setTitle(eventNameET.getText().toString())
-//                .setCustomProperty(appKey, getPackageName()).build();
-//        Log.d(LOG_TAG, "creating folder "+eventNameET.getText());
-//        Drive.DriveApi.getRootFolder(mGoogleApiClient).createFolder(
-//                mGoogleApiClient, changeSet).setResultCallback(folderCreatedCallback);
+        String[] SCOPES = { DriveScopes.DRIVE };
+        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                getApplicationContext(), Arrays.asList(SCOPES))
+                .setBackOff(new ExponentialBackOff());
+        SharedPreferences pref = getApplicationContext().getSharedPreferences("app", Context.MODE_PRIVATE);
+        String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
+        if (accountName != null) {
+            credential.setSelectedAccountName(accountName);
+        }
 
-        insertNewFolderToDb(eventNameET.getText().toString());
-    }
+        final String folderName = eventNameET.getText().toString();
 
-    private void insertNewFolderToDb(String folderName) {
         ServiceCaller caller = new ServiceCaller() {
             @Override
             public void success(Object data) {
-                finish();
+                insertNewFolderToDb(folderName);
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+                Log.e(LOG_TAG, "Error occured while creating folder in Drive");
+            }
+        };
+
+        new MakeRequestTask(credential, caller, this).execute(folderName);
+
+
+    }
+
+    private class MakeRequestTask extends AsyncTask<String, Void, Boolean> {
+        private com.google.api.services.drive.Drive mService = null;
+        private Exception mLastError = null;
+        private Context mContext;
+        ServiceCaller mCaller;
+
+        MakeRequestTask(GoogleAccountCredential credential, ServiceCaller caller, Context context) {
+            HttpTransport transport = AndroidHttp.newCompatibleTransport();
+            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+            Log.d(LOG_TAG, "making request with credentials: "+credential.getSelectedAccountName());
+            mService = new com.google.api.services.drive.Drive.Builder(
+                    transport, jsonFactory, credential)
+                    .setApplicationName("Drive API Android Quickstart")
+                    .build();
+            mContext = context;
+            mCaller = caller;
+        }
+
+        /**
+         * Background task to call Drive API.
+         * @param params no parameters needed for this task.
+         */
+        @Override
+        protected Boolean doInBackground(String... params) {
+            Log.d(LOG_TAG, "doInBackground started");
+            try {
+                return createFolder(params[0]);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "Error!! " ,e);
+                mLastError = e;
+                cancel(true);
+                return false;
+            }
+        }
+
+        /**
+         * Fetch a list of up to 10 file names and IDs.
+         * @return List of Strings describing files, or an empty list if no files
+         *         found.
+         * @throws IOException
+         */
+        private Boolean createFolder(String folderName) throws IOException {
+            // Get a list of up to 10 files.
+            Log.d(LOG_TAG, "createFolder started");
+            File fileMetadata = new File();
+            fileMetadata.setName(folderName);
+            fileMetadata.setMimeType("application/vnd.google-apps.folder");
+
+            File file = mService.files().create(fileMetadata)
+                    .setFields("id")
+                    .execute();
+            Log.d(LOG_TAG, "createFolder finished with file id: "+file.getId());
+
+            mFolderId = file.getId();
+            return file.getId() != null;
+        }
+
+
+        @Override
+        protected void onPreExecute() {
+//            mOutputText.setText("");
+//            mProgress.show();
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+//            mProgress.hide();
+//            if (output == null || output.size() == 0) {
+//                Toast.makeText(mContext, "No results returned.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                output.add(0, "Data retrieved using the Drive API:");
+////                Toast.makeText.setText(TextUtils.join("\n", output));
+//            }
+            if (result) {
+                mCaller.success(true);
+            }
+            else {
+                mCaller.failure(result, "error");
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+//            mProgress.hide();
+            if (mLastError != null) {
+                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
+                    showGooglePlayServicesAvailabilityErrorDialog(
+                            ((GooglePlayServicesAvailabilityIOException) mLastError)
+                                    .getConnectionStatusCode());
+                } else if (mLastError instanceof UserRecoverableAuthIOException) {
+                    startActivityForResult(
+                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
+                            REQUEST_AUTHORIZATION);
+                } else {
+                    Toast.makeText(mContext, "The following error occurred:\n"
+                            + mLastError.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            } else {
+                Toast.makeText(mContext, "Request cancelled.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch(requestCode) {
+            case REQUEST_GOOGLE_PLAY_SERVICES:
+                if (resultCode != RESULT_OK) {
+                } else {
+                }
+                break;
+            case REQUEST_AUTHORIZATION:
+                if (resultCode == RESULT_OK) {
+                    EditText eventNameET = (EditText)findViewById(R.id.eventName);
+                    createEventFolder(eventNameET);
+                }
+                break;
+        }
+    }
+
+    /**
+     * Display an error dialog showing that Google Play Services is missing
+     * or out of date.
+     * @param connectionStatusCode code describing the presence (or lack of)
+     *     Google Play Services on this device.
+     */
+    void showGooglePlayServicesAvailabilityErrorDialog(
+            final int connectionStatusCode) {
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        Dialog dialog = apiAvailability.getErrorDialog(
+                CreateEvent.this,
+                connectionStatusCode,
+                REQUEST_GOOGLE_PLAY_SERVICES);
+        dialog.show();
+    }
+
+    private void insertNewFolderToDb(final String folderName) {
+        ServiceCaller caller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                Log.d(LOG_TAG, "folder "+folderName+" created successfully");
             }
 
             @Override
@@ -161,44 +464,5 @@ public class CreateEvent extends AppCompatActivity implements GoogleApiClient.Co
         folder.setName(folderName);
         folder.setCreatedAt(Calendar.getInstance().getTimeInMillis());
         task.execute(folder);
-    }
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        Snackbar.make(findViewById(R.id.eventName), "Connected", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        Log.i(LOG_TAG, "GoogleApiClient connection suspended");
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        // Called whenever the API client fails to connect.
-        Log.i(LOG_TAG, "GoogleApiClient connection failed: " + connectionResult.toString());
-
-        if (!connectionResult.hasResolution()) {
-
-            // show the localized error dialog.
-            GoogleApiAvailability.getInstance().getErrorDialog(this, connectionResult.getErrorCode(), 0).show();
-            return;
-        }
-
-        /**
-         *  The failure has a resolution. Resolve it.
-         *  Called typically when the app is not yet authorized, and an  authorization
-         *  dialog is displayed to the user.
-         */
-
-        try {
-
-            connectionResult.startResolutionForResult(this, 0);
-
-        } catch (IntentSender.SendIntentException e) {
-
-            Log.e(LOG_TAG, "Exception while starting resolution activity", e);
-        }
     }
 }
