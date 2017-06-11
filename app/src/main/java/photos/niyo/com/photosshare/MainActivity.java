@@ -18,10 +18,12 @@ import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -117,7 +119,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         };
         registerForChanges();
-        requestPermissionForPhotosRead();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            requestPermissionForPhotosRead();
+        }
 
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
@@ -287,7 +291,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 GoogleApiAvailability.getInstance();
         final int connectionStatusCode =
                 apiAvailability.isGooglePlayServicesAvailable(this);
-        return connectionStatusCode == ConnectionResult.SUCCESS;
+        boolean result = connectionStatusCode == ConnectionResult.SUCCESS;
+        Log.d(LOG_TAG, "isGooglePlayServicesAvailable ended with success? "+result);
+        return result;
     }
 
     /**
@@ -376,6 +382,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void requestPermissionForPhotosRead() {
         Log.d(LOG_TAG, "requestPermissionForPhotosRead started");
         int permissionCheck = ActivityCompat.checkSelfPermission(this,
@@ -393,6 +400,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void schedulePhotosJob() {
         mJobScheduler = (JobScheduler)
                 getSystemService( Context.JOB_SCHEDULER_SERVICE );

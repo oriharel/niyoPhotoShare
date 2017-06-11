@@ -9,11 +9,13 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -66,6 +68,7 @@ public class PhotosContentJob extends JobService{
     GoogleAccountCredential mCredential;
     private com.google.api.services.drive.Drive mService = null;
     JobParameters mRunningParams;
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public boolean onStartJob(JobParameters params) {
         Log.i(LOG_TAG, "JOB STARTED!");
