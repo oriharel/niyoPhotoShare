@@ -63,6 +63,8 @@ import static photos.niyo.com.photosshare.PhotosContentJob.MEDIA_URI;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     public static final String LOG_TAG = MainActivity.class.getSimpleName();
+//    private static final long JOB_PERIODIC_INTERVAL = 15 * 60 * 1000;
+    private static final long JOB_PERIODIC_INTERVAL = 30 * 1000;
 
     private FoldersListAdapter mAdapter;
     private List<Folder> mFoldersList;
@@ -71,7 +73,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     Handler mHandler = new Handler();
     private ContentObserver mObserver;
     private JobScheduler mJobScheduler;
-    JobInfo JOB_INFO;
     GoogleAccountCredential mCredential;
     private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY };
     static final int REQUEST_ACCOUNT_PICKER = 1000;
@@ -119,9 +120,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         };
         registerForChanges();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            requestPermissionForPhotosRead();
-        }
+        requestPermissionForPhotosRead();
 
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
@@ -189,8 +188,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             Log.d(LOG_TAG, "getDataFromApi started");
             List<String> fileInfo = new ArrayList<String>();
             FileList result = mService.files().list()
-                    .setPageSize(10)
-                    .setFields("nextPageToken, files(id, name)")
+                    .setPageSize(30)
+                    .setFields("nextPageToken, files(id, kind, parents, name)")
                     .execute();
             Log.d(LOG_TAG, "after mService.execute. result: "+result.getFiles().size());
             List<File> files = result.getFiles();
@@ -198,8 +197,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 for (File file : files) {
                     fileInfo.add(String.format("%s (%s)\n",
                             file.getName(), file.getId()));
-                    Log.d(LOG_TAG, "found: "+String.format("%s (%s)\n",
-                            file.getName(), file.getId()));
+                    Log.d(LOG_TAG, "found: "+String.format("%s %s %s (%s)\n",
+                            file.getName(), file.getKind(), file.getParents(), file.getId()));
+
                 }
             }
             return fileInfo;
@@ -367,7 +367,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    schedulePhotosJob();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        schedulePhotosJobNougat();
+                    }
+                    else {
+                        schedulePhotosJob();
+                    }
 
                 } else {
 
@@ -382,7 +387,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     private void requestPermissionForPhotosRead() {
         Log.d(LOG_TAG, "requestPermissionForPhotosRead started");
         int permissionCheck = ActivityCompat.checkSelfPermission(this,
@@ -396,12 +400,18 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
         else {
             Log.d(LOG_TAG, "permission to photos read already granted");
-            schedulePhotosJob();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                schedulePhotosJobNougat();
+            }
+            else {
+                schedulePhotosJob();
+            }
         }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    private void schedulePhotosJob() {
+    private void schedulePhotosJobNougat() {
+        Log.d(LOG_TAG, "schedulePhotosJobNougat started");
         mJobScheduler = (JobScheduler)
                 getSystemService( Context.JOB_SCHEDULER_SERVICE );
 
@@ -413,8 +423,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         // Also look for general reports of changes in the overall provider.
         builder.addTriggerContentUri(new JobInfo.TriggerContentUri(MEDIA_URI, 0));
 
-        JOB_INFO = builder.build();
-        mJobScheduler.schedule(JOB_INFO);
+        mJobScheduler.schedule(builder.build());
+        Log.i(LOG_TAG, "JOB SCHEDULED!");
+    }
+
+    private void schedulePhotosJob() {
+        Log.d(LOG_TAG, "schedulePhotosJob started");
+        mJobScheduler = (JobScheduler)
+                getSystemService( Context.JOB_SCHEDULER_SERVICE );
+
+        JobInfo.Builder builder = new JobInfo.Builder( 1,
+                new ComponentName( getPackageName(),PhotosContentJob.class.getName() ) );
+
+        builder.setPeriodic(JOB_PERIODIC_INTERVAL);
+
+        mJobScheduler.schedule(builder.build());
         Log.i(LOG_TAG, "JOB SCHEDULED!");
     }
 

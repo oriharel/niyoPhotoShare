@@ -47,14 +47,6 @@
             android:name=".PhotosContentJob"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
-        <receiver
-            android:name=".NewPictureReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.hardware.Camera.ACTION_NEW_PICTURE"/>
-            </intent-filter>
-        </receiver>
     </application>
 
 </manifest>

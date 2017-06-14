@@ -5,24 +5,19 @@ import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException;
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
@@ -31,12 +26,14 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
+
+import pub.devrel.easypermissions.EasyPermissions;
 
 import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
 
@@ -53,10 +50,13 @@ public class PhotosContentJob extends JobService{
     // Path segments for image-specific URIs in the provider.
     static final List<String> EXTERNAL_PATH_SEGMENTS
             = MediaStore.Images.Media.EXTERNAL_CONTENT_URI.getPathSegments();
+    public static final String TEMP_FOLDER_ID = "0B0bdCx3BDBCLS0pDUGFINk5ibU0";
 
     // The columns we want to retrieve about a particular image.
     static final String[] PROJECTION = new String[] {
-            MediaStore.Images.ImageColumns._ID, MediaStore.Images.ImageColumns.DATA
+            MediaStore.Images.ImageColumns._ID,
+            MediaStore.Images.ImageColumns.DATA,
+            MediaStore.Images.ImageColumns.DATE_TAKEN
     };
 
     static final int PROJECTION_ID = 0;
@@ -64,11 +64,11 @@ public class PhotosContentJob extends JobService{
     static final String DCIM_DIR = Environment.getExternalStoragePublicDirectory(
             Environment.DIRECTORY_DCIM).getPath();
     private static final String[] SCOPES = { DriveScopes.DRIVE };
+    private static final String LAST_SYNC_IN_MILLIS = "lastSyncInMillis";
 
     GoogleAccountCredential mCredential;
     private com.google.api.services.drive.Drive mService = null;
     JobParameters mRunningParams;
-    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public boolean onStartJob(JobParameters params) {
         Log.i(LOG_TAG, "JOB STARTED!");
@@ -91,10 +91,211 @@ public class PhotosContentJob extends JobService{
             getResultsFromApi();
         }
 
-        // Instead of real work, we are going to build a string to show to the user.
-        StringBuilder sb = new StringBuilder();
+        //get new photos
+        List<String> photoNames = getNewPhotosFileNames(params);
 
-        // Did we trigger due to a content change?
+
+        //upload new photos to drive
+        uploadNewPhotosToDrive(photoNames);
+
+        Log.d(LOG_TAG, "onStartJob ended");
+        return true;
+    }
+
+    private void uploadNewPhotosToDrive(final List<String> photoNames) {
+        Log.d(LOG_TAG, "uploadNewPhotosToDrive started");
+        SharedPreferences prefs = getSharedPreferences("app", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong(LAST_SYNC_IN_MILLIS, Calendar.getInstance().getTimeInMillis());
+        editor.apply();
+
+        ServiceCaller caller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                Log.d(LOG_TAG, "success in uploading to drive!!");
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+                Log.e(LOG_TAG, "fail to upload "+photoNames.get(0));
+            }
+        };
+
+        new UploadToGoogleDriveTask(mCredential, caller).execute(photoNames.get(0));
+
+    }
+
+    private class UploadToGoogleDriveTask extends AsyncTask<String, Void, Boolean> {
+        private com.google.api.services.drive.Drive mService = null;
+        private Exception mLastError = null;
+        private ServiceCaller _caller;
+//        private Context mContext;
+
+        UploadToGoogleDriveTask(GoogleAccountCredential credential, ServiceCaller caller) {
+            HttpTransport transport = AndroidHttp.newCompatibleTransport();
+            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+            mService = new com.google.api.services.drive.Drive.Builder(
+                    transport, jsonFactory, credential)
+                    .setApplicationName("Drive API Android Quickstart")
+                    .build();
+            _caller = caller;
+//            mContext = context;
+        }
+
+        /**
+         * Background task to call Drive API.
+         *
+         * @param params no parameters needed for this task.
+         */
+        @Override
+        protected Boolean doInBackground(String... params) {
+            try {
+                return uploadToDrive(params[0]);
+            } catch (Exception e) {
+                mLastError = e;
+                cancel(true);
+                return null;
+            }
+        }
+
+        /**
+         * Fetch a list of up to 10 file names and IDs.
+         *
+         * @return List of Strings describing files, or an empty list if no files
+         * found.
+         * @throws IOException
+         */
+        private Boolean uploadToDrive(String fileName) throws IOException {
+            // Get a list of up to 10 files.
+            Log.d(LOG_TAG, "uploadToDrive started");
+            Log.d(LOG_TAG, "uploading "+fileName+" to google drive");
+            Boolean result = false;
+            File fileMetadata = new File();
+            fileMetadata.setName("photo.jpg");
+            fileMetadata.setParents(Collections.singletonList(TEMP_FOLDER_ID));
+            java.io.File filePath = new java.io.File(fileName);
+            FileContent mediaContent = new FileContent("image/jpeg", filePath);
+            File file = null;
+            try {
+                file = mService.files().create(fileMetadata, mediaContent)
+                        .setFields("id, parents")
+                        .execute();
+                result = true;
+            } catch (IOException e) {
+                Log.e(LOG_TAG, "[uploadNewPhotosToDrive] Error ", e);
+            }
+            return result;
+        }
+
+
+        @Override
+        protected void onPreExecute() {
+//            mOutputText.setText("");
+//            mProgress.show();
+        }
+
+        @Override
+        protected void onPostExecute(Boolean output) {
+//            mProgress.hide();
+            if (output) _caller.success(output);
+            else _caller.failure(output, "fail to upload");
+        }
+
+        @Override
+        protected void onCancelled() {
+//            mProgress.hide();
+            if (mLastError != null) {
+//                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
+//                    showGooglePlayServicesAvailabilityErrorDialog(
+//                            ((GooglePlayServicesAvailabilityIOException) mLastError)
+//                                    .getConnectionStatusCode());
+//                } else if (mLastError instanceof UserRecoverableAuthIOException) {
+                if (mLastError instanceof UserRecoverableAuthIOException) {
+//                    startActivityForResult(
+//                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
+//                            MainActivity.REQUEST_AUTHORIZATION);
+//                } else {
+//                {
+                    Log.e(LOG_TAG, "The following error occurred:\n"
+                            + mLastError.getMessage());
+//                }
+                } else {
+//                    Toast.makeText(mContext, "Request cancelled.", Toast.LENGTH_SHORT).show();
+                    Log.e(LOG_TAG, "Request cancelled");
+                }
+            }
+        }
+    }
+
+
+
+    private List<String> getNewPhotosFileNames(JobParameters params) {
+        Log.d(LOG_TAG, "getNewPhotosFileNames started");
+        String selection;
+        List<String> result = new ArrayList<>();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            selection = getNewPhotosNougat(params);
+        }
+        else {
+            selection = getNewPhotosLegacy();
+        }
+
+        Cursor cursor = null;
+        boolean haveFiles = false;
+        StringBuilder sb = new StringBuilder();
+        try {
+            if (EasyPermissions.hasPermissions(this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                cursor = getContentResolver().query(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        PROJECTION, selection, null, null);
+            }
+            else {
+                Log.e(LOG_TAG, "no permission READ_EXTERNAL_STORAGE");
+            }
+
+            while (cursor != null && cursor.moveToNext()) {
+                // We only care about files in the DCIM directory.
+                String dir = cursor.getString(PROJECTION_DATA);
+                if (dir.startsWith(DCIM_DIR)) {
+                    if (!haveFiles) {
+                        haveFiles = true;
+                        sb.append("New photos:\n");
+                    }
+                    sb.append(cursor.getInt(PROJECTION_ID));
+                    sb.append(": ");
+                    sb.append(dir);
+                    result.add(dir);
+                    sb.append("\n");
+                }
+            }
+        } catch (SecurityException e) {
+            Log.e(LOG_TAG, "Error: no access to media!", e);
+            sb.append("Error: no access to media!");
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        Log.d(LOG_TAG, "query result: "+sb);
+        Log.d(LOG_TAG, "getNewPhotosFileNames ended with "+result.size()+" length");
+        return result;
+    }
+
+    private String getNewPhotosLegacy() {
+        Log.d(LOG_TAG, "getNewPhotosLegacy started");
+        SharedPreferences pref = getSharedPreferences("app", MODE_PRIVATE);
+        Long lastSync = pref.getLong(LAST_SYNC_IN_MILLIS, Calendar.getInstance().getTimeInMillis());
+        String selection = MediaStore.Images.ImageColumns.DATE_TAKEN+" > "+lastSync;
+        Log.d(LOG_TAG, "selection clause is: "+selection);
+        return selection;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private String getNewPhotosNougat(JobParameters params) {
+        Log.d(LOG_TAG, "getNewPhotosNougat started");
+        StringBuilder selection = new StringBuilder();
         if (params.getTriggeredContentAuthorities() != null) {
             boolean rescanNeeded = false;
 
@@ -105,9 +306,9 @@ public class PhotosContentJob extends JobService{
                 ArrayList<String> ids = new ArrayList<>();
                 for (Uri uri : params.getTriggeredContentUris()) {
                     List<String> path = uri.getPathSegments();
-                    if (path != null && path.size() == EXTERNAL_PATH_SEGMENTS.size()+1) {
+                    if (path != null && path.size() == EXTERNAL_PATH_SEGMENTS.size() + 1) {
                         Log.d(LOG_TAG, "This is a specific file.");
-                        ids.add(path.get(path.size()-1));
+                        ids.add(path.get(path.size() - 1));
                     } else {
                         Log.d(LOG_TAG, "Oops, there is some general change!");
                         rescanNeeded = true;
@@ -117,8 +318,8 @@ public class PhotosContentJob extends JobService{
                 if (ids.size() > 0) {
                     // If we found some ids that changed, we want to determine what they are.
                     // First, we do a query with content provider to ask about all of them.
-                    StringBuilder selection = new StringBuilder();
-                    for (int i=0; i<ids.size(); i++) {
+
+                    for (int i = 0; i < ids.size(); i++) {
                         if (selection.length() > 0) {
                             selection.append(" OR ");
                         }
@@ -127,66 +328,10 @@ public class PhotosContentJob extends JobService{
                         selection.append(ids.get(i));
                         selection.append("'");
                     }
-
-                    // Now we iterate through the query, looking at the filenames of
-                    // the items to determine if they are ones we are interested in.
-                    Cursor cursor = null;
-                    boolean haveFiles = false;
-                    try {
-                        int permissionCheck = checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE);
-
-                        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-                            cursor = getContentResolver().query(
-                                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                    PROJECTION, selection.toString(), null, null);
-                        }
-                        else {
-                            Log.e(LOG_TAG, "no permission READ_EXTERNAL_STORAGE");
-                        }
-
-                        while (cursor != null && cursor.moveToNext()) {
-                            // We only care about files in the DCIM directory.
-                            String dir = cursor.getString(PROJECTION_DATA);
-                            if (dir.startsWith(DCIM_DIR)) {
-                                if (!haveFiles) {
-                                    haveFiles = true;
-                                    sb.append("New photos:\n");
-                                }
-                                sb.append(cursor.getInt(PROJECTION_ID));
-                                sb.append(": ");
-                                sb.append(dir);
-                                sb.append("\n");
-                            }
-
-//                            uploadToGoogleDrive(dir);
-
-                        }
-                    } catch (SecurityException e) {
-                        Log.e(LOG_TAG, "Error: no access to media!", e);
-                        sb.append("Error: no access to media!");
-                    } finally {
-                        if (cursor != null) {
-                            cursor.close();
-                        }
-                    }
                 }
-
-            } else {
-                // We don't have any details about URIs (because too many changed at once),
-                // so just note that we need to do a full rescan.
-                rescanNeeded = true;
             }
-
-            if (rescanNeeded) {
-                sb.append("Photos rescan needed!");
-            }
-        } else {
-            sb.append("(No photos content)");
         }
-        Log.d(LOG_TAG, "onStartJob ended with "+sb);
-//        getResultsFromApi();
-        Toast.makeText(this, sb.toString(), Toast.LENGTH_LONG).show();
-        return true;
+        return selection.toString();
     }
 
     private void getResultsFromApi() {
@@ -240,14 +385,14 @@ public class PhotosContentJob extends JobService{
                     .setPageSize(10)
                     .setFields("nextPageToken, files(id, name)")
                     .execute();
-            Log.d(LOG_TAG, "after mService.execute. result: " + result.getFiles().size());
+//            Log.d(LOG_TAG, "after mService.execute. result: " + result.getFiles().size());
             List<File> files = result.getFiles();
             if (files != null) {
                 for (File file : files) {
                     fileInfo.add(String.format("%s (%s)\n",
                             file.getName(), file.getId()));
-                    Log.d(LOG_TAG, "found: " + String.format("%s (%s)\n",
-                            file.getName(), file.getId()));
+//                    Log.d(LOG_TAG, "found: " + String.format("%s (%s)\n",
+//                            file.getName(), file.getId()));
                 }
             }
             return fileInfo;
