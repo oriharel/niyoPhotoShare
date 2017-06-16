@@ -33,6 +33,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 
+import photos.niyo.com.photosshare.tasks.GetActiveFolderTask;
 import pub.devrel.easypermissions.EasyPermissions;
 
 import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
@@ -50,7 +51,6 @@ public class PhotosContentJob extends JobService{
     // Path segments for image-specific URIs in the provider.
     static final List<String> EXTERNAL_PATH_SEGMENTS
             = MediaStore.Images.Media.EXTERNAL_CONTENT_URI.getPathSegments();
-    public static final String TEMP_FOLDER_ID = "0B0bdCx3BDBCLS0pDUGFINk5ibU0";
 
     // The columns we want to retrieve about a particular image.
     static final String[] PROJECTION = new String[] {
@@ -69,11 +69,49 @@ public class PhotosContentJob extends JobService{
     GoogleAccountCredential mCredential;
     private com.google.api.services.drive.Drive mService = null;
     JobParameters mRunningParams;
+
     @Override
-    public boolean onStartJob(JobParameters params) {
+    public boolean onStartJob(final JobParameters params) {
         Log.i(LOG_TAG, "JOB STARTED!");
         mRunningParams = params;
 
+        initJob();
+
+        ServiceCaller activeFolderCaller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                Folder activeFolder = (Folder)data;
+                Log.d(LOG_TAG, String.format("found active folder %s", activeFolder.getName()));
+
+                //get new photos
+                List<String> photoNames = getNewPhotosFileNames(params, activeFolder.getStartDate());
+
+                if (photoNames.size() > 0) {
+                    Log.d(LOG_TAG, "uploading "+photoNames.size()+"" +
+                            " new photos to "+activeFolder.getName());
+                    //upload new photos to drive
+                    uploadNewPhotosToDrive(photoNames, activeFolder.getId());
+                }
+                else {
+                    Log.d(LOG_TAG, "no photos to upload");
+                }
+
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+                Log.d(LOG_TAG, String.format("no active folder %s", description));
+            }
+        };
+
+        GetActiveFolderTask folderTask = new GetActiveFolderTask(this, activeFolderCaller);
+        folderTask.execute();
+
+        Log.d(LOG_TAG, "onStartJob ended");
+        return true;
+    }
+
+    private void initJob() {
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
                 getApplicationContext(), Arrays.asList(SCOPES))
@@ -88,22 +126,12 @@ public class PhotosContentJob extends JobService{
         String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
         if (accountName != null) {
             mCredential.setSelectedAccountName(accountName);
-            getResultsFromApi();
+//            getResultsFromApi();
         }
-
-        //get new photos
-        List<String> photoNames = getNewPhotosFileNames(params);
-
-
-        //upload new photos to drive
-        uploadNewPhotosToDrive(photoNames);
-
-        Log.d(LOG_TAG, "onStartJob ended");
-        return true;
     }
 
-    private void uploadNewPhotosToDrive(final List<String> photoNames) {
-        Log.d(LOG_TAG, "uploadNewPhotosToDrive started");
+    private void uploadNewPhotosToDrive(final List<String> photoNames, String folderId) {
+        Log.d(LOG_TAG, "uploadNewPhotosToDrive started with folder Id: "+folderId);
         SharedPreferences prefs = getSharedPreferences("app", MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putLong(LAST_SYNC_IN_MILLIS, Calendar.getInstance().getTimeInMillis());
@@ -121,7 +149,10 @@ public class PhotosContentJob extends JobService{
             }
         };
 
-        new UploadToGoogleDriveTask(mCredential, caller).execute(photoNames.get(0));
+        if (photoNames.size() > 0) {
+            new UploadToGoogleDriveTask(mCredential, caller).execute(photoNames.get(0), folderId);
+        }
+
 
     }
 
@@ -129,7 +160,6 @@ public class PhotosContentJob extends JobService{
         private com.google.api.services.drive.Drive mService = null;
         private Exception mLastError = null;
         private ServiceCaller _caller;
-//        private Context mContext;
 
         UploadToGoogleDriveTask(GoogleAccountCredential credential, ServiceCaller caller) {
             HttpTransport transport = AndroidHttp.newCompatibleTransport();
@@ -139,7 +169,6 @@ public class PhotosContentJob extends JobService{
                     .setApplicationName("Drive API Android Quickstart")
                     .build();
             _caller = caller;
-//            mContext = context;
         }
 
         /**
@@ -149,10 +178,13 @@ public class PhotosContentJob extends JobService{
          */
         @Override
         protected Boolean doInBackground(String... params) {
+            Log.d(LOG_TAG, "[UploadToGoogleDriveTask] started with fileName: "+
+                    params[0].toString()+" folder id: "+params[1].toString());
             try {
-                return uploadToDrive(params[0]);
+                return uploadToDrive(params[0], params[1]);
             } catch (Exception e) {
                 mLastError = e;
+                Log.e(LOG_TAG, "[UploadToGoogleDriveTask] ERROR!! ", e);
                 cancel(true);
                 return null;
             }
@@ -165,14 +197,14 @@ public class PhotosContentJob extends JobService{
          * found.
          * @throws IOException
          */
-        private Boolean uploadToDrive(String fileName) throws IOException {
+        private Boolean uploadToDrive(String fileName, String folderId) throws IOException {
             // Get a list of up to 10 files.
             Log.d(LOG_TAG, "uploadToDrive started");
             Log.d(LOG_TAG, "uploading "+fileName+" to google drive");
             Boolean result = false;
             File fileMetadata = new File();
-            fileMetadata.setName("photo.jpg");
-            fileMetadata.setParents(Collections.singletonList(TEMP_FOLDER_ID));
+            fileMetadata.setName(fileName);
+            fileMetadata.setParents(Collections.singletonList(folderId));
             java.io.File filePath = new java.io.File(fileName);
             FileContent mediaContent = new FileContent("image/jpeg", filePath);
             File file = null;
@@ -227,9 +259,7 @@ public class PhotosContentJob extends JobService{
         }
     }
 
-
-
-    private List<String> getNewPhotosFileNames(JobParameters params) {
+    private List<String> getNewPhotosFileNames(JobParameters params, Long startDate) {
         Log.d(LOG_TAG, "getNewPhotosFileNames started");
         String selection;
         List<String> result = new ArrayList<>();
@@ -238,7 +268,7 @@ public class PhotosContentJob extends JobService{
             selection = getNewPhotosNougat(params);
         }
         else {
-            selection = getNewPhotosLegacy();
+            selection = getNewPhotosLegacy(startDate);
         }
 
         Cursor cursor = null;
@@ -247,6 +277,7 @@ public class PhotosContentJob extends JobService{
         try {
             if (EasyPermissions.hasPermissions(this,
                     Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                Log.d(LOG_TAG, "querying with selection: "+selection);
                 cursor = getContentResolver().query(
                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                         PROJECTION, selection, null, null);
@@ -283,10 +314,10 @@ public class PhotosContentJob extends JobService{
         return result;
     }
 
-    private String getNewPhotosLegacy() {
+    private String getNewPhotosLegacy(Long startDate) {
         Log.d(LOG_TAG, "getNewPhotosLegacy started");
         SharedPreferences pref = getSharedPreferences("app", MODE_PRIVATE);
-        Long lastSync = pref.getLong(LAST_SYNC_IN_MILLIS, Calendar.getInstance().getTimeInMillis());
+        Long lastSync = pref.getLong(LAST_SYNC_IN_MILLIS, startDate);
         String selection = MediaStore.Images.ImageColumns.DATE_TAKEN+" > "+lastSync;
         Log.d(LOG_TAG, "selection clause is: "+selection);
         return selection;
@@ -334,113 +365,113 @@ public class PhotosContentJob extends JobService{
         return selection.toString();
     }
 
-    private void getResultsFromApi() {
-        Log.d(LOG_TAG, "getDataFromApi started");
-        new MakeRequestTask(mCredential).execute();
-    }
+//    private void getResultsFromApi() {
+//        Log.d(LOG_TAG, "getDataFromApi started");
+//        new MakeRequestTask(mCredential).execute();
+//    }
 
-    private class MakeRequestTask extends AsyncTask<Void, Void, List<String>> {
-        private com.google.api.services.drive.Drive mService = null;
-        private Exception mLastError = null;
-//        private Context mContext;
-
-        MakeRequestTask(GoogleAccountCredential credential) {
-            HttpTransport transport = AndroidHttp.newCompatibleTransport();
-            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
-            mService = new com.google.api.services.drive.Drive.Builder(
-                    transport, jsonFactory, credential)
-                    .setApplicationName("Drive API Android Quickstart")
-                    .build();
-//            mContext = context;
-        }
-
-        /**
-         * Background task to call Drive API.
-         *
-         * @param params no parameters needed for this task.
-         */
-        @Override
-        protected List<String> doInBackground(Void... params) {
-            try {
-                return getDataFromApi();
-            } catch (Exception e) {
-                mLastError = e;
-                cancel(true);
-                return null;
-            }
-        }
-
-        /**
-         * Fetch a list of up to 10 file names and IDs.
-         *
-         * @return List of Strings describing files, or an empty list if no files
-         * found.
-         * @throws IOException
-         */
-        private List<String> getDataFromApi() throws IOException {
-            // Get a list of up to 10 files.
-            Log.d(LOG_TAG, "getDataFromApi started");
-            List<String> fileInfo = new ArrayList<String>();
-            FileList result = mService.files().list()
-                    .setPageSize(10)
-                    .setFields("nextPageToken, files(id, name)")
-                    .execute();
-//            Log.d(LOG_TAG, "after mService.execute. result: " + result.getFiles().size());
-            List<File> files = result.getFiles();
-            if (files != null) {
-                for (File file : files) {
-                    fileInfo.add(String.format("%s (%s)\n",
-                            file.getName(), file.getId()));
-//                    Log.d(LOG_TAG, "found: " + String.format("%s (%s)\n",
+//    private class MakeRequestTask extends AsyncTask<Void, Void, List<String>> {
+//        private com.google.api.services.drive.Drive mService = null;
+//        private Exception mLastError = null;
+////        private Context mContext;
+//
+//        MakeRequestTask(GoogleAccountCredential credential) {
+//            HttpTransport transport = AndroidHttp.newCompatibleTransport();
+//            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+//            mService = new com.google.api.services.drive.Drive.Builder(
+//                    transport, jsonFactory, credential)
+//                    .setApplicationName("Drive API Android Quickstart")
+//                    .build();
+////            mContext = context;
+//        }
+//
+//        /**
+//         * Background task to call Drive API.
+//         *
+//         * @param params no parameters needed for this task.
+//         */
+//        @Override
+//        protected List<String> doInBackground(Void... params) {
+//            try {
+//                return getDataFromApi();
+//            } catch (Exception e) {
+//                mLastError = e;
+//                cancel(true);
+//                return null;
+//            }
+//        }
+//
+//        /**
+//         * Fetch a list of up to 10 file names and IDs.
+//         *
+//         * @return List of Strings describing files, or an empty list if no files
+//         * found.
+//         * @throws IOException
+//         */
+//        private List<String> getDataFromApi() throws IOException {
+//            // Get a list of up to 10 files.
+//            Log.d(LOG_TAG, "getDataFromApi started");
+//            List<String> fileInfo = new ArrayList<String>();
+//            FileList result = mService.files().list()
+//                    .setPageSize(10)
+//                    .setFields("nextPageToken, files(id, name)")
+//                    .execute();
+////            Log.d(LOG_TAG, "after mService.execute. result: " + result.getFiles().size());
+//            List<File> files = result.getFiles();
+//            if (files != null) {
+//                for (File file : files) {
+//                    fileInfo.add(String.format("%s (%s)\n",
 //                            file.getName(), file.getId()));
-                }
-            }
-            return fileInfo;
-        }
-
-
-        @Override
-        protected void onPreExecute() {
-//            mOutputText.setText("");
-//            mProgress.show();
-        }
-
-        @Override
-        protected void onPostExecute(List<String> output) {
-//            mProgress.hide();
-            if (output == null || output.size() == 0) {
-//                Toast.makeText(mContext, "No results returned.", Toast.LENGTH_SHORT).show();
-            } else {
-                output.add(0, "Data retrieved using the Drive API:");
-//                Toast.makeText.setText(TextUtils.join("\n", output));
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-//            mProgress.hide();
-            if (mLastError != null) {
-//                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
-//                    showGooglePlayServicesAvailabilityErrorDialog(
-//                            ((GooglePlayServicesAvailabilityIOException) mLastError)
-//                                    .getConnectionStatusCode());
-//                } else if (mLastError instanceof UserRecoverableAuthIOException) {
-                if (mLastError instanceof UserRecoverableAuthIOException) {
-//                    startActivityForResult(
-//                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
-//                            MainActivity.REQUEST_AUTHORIZATION);
-//                } else {
-//                {
-                    Log.e(LOG_TAG, "The following error occurred:\n"
-                            + mLastError.getMessage());
+////                    Log.d(LOG_TAG, "found: " + String.format("%s (%s)\n",
+////                            file.getName(), file.getId()));
 //                }
-                } else {
-//                    Toast.makeText(mContext, "Request cancelled.", Toast.LENGTH_SHORT).show();
-                    Log.e(LOG_TAG, "Request cancelled");
-                }
-            }
-        }
-    }
+//            }
+//            return fileInfo;
+//        }
+//
+//
+//        @Override
+//        protected void onPreExecute() {
+////            mOutputText.setText("");
+////            mProgress.show();
+//        }
+//
+//        @Override
+//        protected void onPostExecute(List<String> output) {
+////            mProgress.hide();
+//            if (output == null || output.size() == 0) {
+////                Toast.makeText(mContext, "No results returned.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                output.add(0, "Data retrieved using the Drive API:");
+////                Toast.makeText.setText(TextUtils.join("\n", output));
+//            }
+//        }
+//
+//        @Override
+//        protected void onCancelled() {
+////            mProgress.hide();
+//            if (mLastError != null) {
+////                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
+////                    showGooglePlayServicesAvailabilityErrorDialog(
+////                            ((GooglePlayServicesAvailabilityIOException) mLastError)
+////                                    .getConnectionStatusCode());
+////                } else if (mLastError instanceof UserRecoverableAuthIOException) {
+//                if (mLastError instanceof UserRecoverableAuthIOException) {
+////                    startActivityForResult(
+////                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
+////                            MainActivity.REQUEST_AUTHORIZATION);
+////                } else {
+////                {
+//                    Log.e(LOG_TAG, "The following error occurred:\n"
+//                            + mLastError.getMessage());
+////                }
+//                } else {
+////                    Toast.makeText(mContext, "Request cancelled.", Toast.LENGTH_SHORT).show();
+//                    Log.e(LOG_TAG, "Request cancelled");
+//                }
+//            }
+//        }
+//    }
 
 //    private void uploadToGoogleDrive(final String dir) {
 //

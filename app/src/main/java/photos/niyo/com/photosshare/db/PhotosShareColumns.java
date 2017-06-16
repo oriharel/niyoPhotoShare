@@ -12,4 +12,6 @@ public class PhotosShareColumns implements BaseColumns {
     public static final String CREATE_AT = "created_at";
     public static final String SHARED_WITH = "shared_with";
     public static final String LOCATION = "location";
+    public static final String START_DATE = "start_date";
+    public static final String END_DATE = "end_date";
 }

@@ -20,10 +20,15 @@ public class PhotosShareDbHelper extends SQLiteOpenHelper {
                     + PhotosShareColumns.FOLDER_ID + " TEXT, "
                     + PhotosShareColumns.FOLDER_NAME + " TEXT, "
                     + PhotosShareColumns.CREATE_AT + " BIGINT, "
+                    + PhotosShareColumns.START_DATE + " BIGINT, "
+                    + PhotosShareColumns.END_DATE + " BIGINT, "
                     + PhotosShareColumns.SHARED_WITH + " ARRAY, "
                     + PhotosShareColumns.LOCATION + " Decimal(9,6));";
 
-    public PhotosShareDbHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
+    public PhotosShareDbHelper(Context context,
+                               String name,
+                               SQLiteDatabase.CursorFactory factory,
+                               int version) {
         super(context, name, factory, version);
         Log.d(LOG_TAG, "constructor called");
     }

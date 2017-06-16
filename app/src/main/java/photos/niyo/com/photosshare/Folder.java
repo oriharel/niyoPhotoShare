@@ -25,4 +25,31 @@ public class Folder {
 
     private String _name;
     private Long _createdAt;
+    private String _id;
+    private Long _startDate;
+    private Long _endDate;
+
+    public String getId() {
+        return _id;
+    }
+
+    public void setId(String id) {
+        this._id = id;
+    }
+
+    public Long getStartDate() {
+        return _startDate;
+    }
+
+    public void setStartDate(Long startDate) {
+        this._startDate = startDate;
+    }
+
+    public Long getEndDate() {
+        return _endDate;
+    }
+
+    public void setEndDate(Long endDate) {
+        this._endDate = endDate;
+    }
 }

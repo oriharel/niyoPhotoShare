@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         } else if (! isDeviceOnline()) {
             Toast.makeText(this, "No network connection available.", Toast.LENGTH_SHORT).show();
         } else {
-            new MakeRequestTask(mCredential, this).execute();
+//            new MakeRequestTask(mCredential, this).execute();
         }
     }
 
@@ -147,103 +147,103 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
      * An asynchronous task that handles the Drive API call.
      * Placing the API calls in their own task ensures the UI stays responsive.
      */
-    private class MakeRequestTask extends AsyncTask<Void, Void, List<String>> {
-        private com.google.api.services.drive.Drive mService = null;
-        private Exception mLastError = null;
-        private Context mContext;
-
-        MakeRequestTask(GoogleAccountCredential credential, Context context) {
-            HttpTransport transport = AndroidHttp.newCompatibleTransport();
-            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
-            mService = new com.google.api.services.drive.Drive.Builder(
-                    transport, jsonFactory, credential)
-                    .setApplicationName("Drive API Android Quickstart")
-                    .build();
-            mContext = context;
-        }
-
-        /**
-         * Background task to call Drive API.
-         * @param params no parameters needed for this task.
-         */
-        @Override
-        protected List<String> doInBackground(Void... params) {
-            try {
-                return getDataFromApi();
-            } catch (Exception e) {
-                mLastError = e;
-                cancel(true);
-                return null;
-            }
-        }
-
-        /**
-         * Fetch a list of up to 10 file names and IDs.
-         * @return List of Strings describing files, or an empty list if no files
-         *         found.
-         * @throws IOException
-         */
-        private List<String> getDataFromApi() throws IOException {
-            // Get a list of up to 10 files.
-            Log.d(LOG_TAG, "getDataFromApi started");
-            List<String> fileInfo = new ArrayList<String>();
-            FileList result = mService.files().list()
-                    .setPageSize(30)
-                    .setFields("nextPageToken, files(id, kind, parents, name)")
-                    .execute();
-            Log.d(LOG_TAG, "after mService.execute. result: "+result.getFiles().size());
-            List<File> files = result.getFiles();
-            if (files != null) {
-                for (File file : files) {
-                    fileInfo.add(String.format("%s (%s)\n",
-                            file.getName(), file.getId()));
-                    Log.d(LOG_TAG, "found: "+String.format("%s %s %s (%s)\n",
-                            file.getName(), file.getKind(), file.getParents(), file.getId()));
-
-                }
-            }
-            return fileInfo;
-        }
-
-
-        @Override
-        protected void onPreExecute() {
-//            mOutputText.setText("");
-//            mProgress.show();
-        }
-
-        @Override
-        protected void onPostExecute(List<String> output) {
-//            mProgress.hide();
-            if (output == null || output.size() == 0) {
-                Toast.makeText(mContext, "No results returned.", Toast.LENGTH_SHORT).show();
-            } else {
-                output.add(0, "Data retrieved using the Drive API:");
-//                Toast.makeText.setText(TextUtils.join("\n", output));
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-//            mProgress.hide();
-            if (mLastError != null) {
-                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
-                    showGooglePlayServicesAvailabilityErrorDialog(
-                            ((GooglePlayServicesAvailabilityIOException) mLastError)
-                                    .getConnectionStatusCode());
-                } else if (mLastError instanceof UserRecoverableAuthIOException) {
-                    startActivityForResult(
-                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
-                            MainActivity.REQUEST_AUTHORIZATION);
-                } else {
-                    Toast.makeText(mContext, "The following error occurred:\n"
-                            + mLastError.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            } else {
-                Toast.makeText(mContext, "Request cancelled.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
+//    private class MakeRequestTask extends AsyncTask<Void, Void, List<String>> {
+//        private com.google.api.services.drive.Drive mService = null;
+//        private Exception mLastError = null;
+//        private Context mContext;
+//
+//        MakeRequestTask(GoogleAccountCredential credential, Context context) {
+//            HttpTransport transport = AndroidHttp.newCompatibleTransport();
+//            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+//            mService = new com.google.api.services.drive.Drive.Builder(
+//                    transport, jsonFactory, credential)
+//                    .setApplicationName("Drive API Android Quickstart")
+//                    .build();
+//            mContext = context;
+//        }
+//
+//        /**
+//         * Background task to call Drive API.
+//         * @param params no parameters needed for this task.
+//         */
+//        @Override
+//        protected List<String> doInBackground(Void... params) {
+//            try {
+//                return getDataFromApi();
+//            } catch (Exception e) {
+//                mLastError = e;
+//                cancel(true);
+//                return null;
+//            }
+//        }
+//
+//        /**
+//         * Fetch a list of up to 10 file names and IDs.
+//         * @return List of Strings describing files, or an empty list if no files
+//         *         found.
+//         * @throws IOException
+//         */
+//        private List<String> getDataFromApi() throws IOException {
+//            // Get a list of up to 10 files.
+//            Log.d(LOG_TAG, "getDataFromApi started");
+//            List<String> fileInfo = new ArrayList<String>();
+//            FileList result = mService.files().list()
+//                    .setPageSize(30)
+//                    .setFields("nextPageToken, files(id, kind, parents, name)")
+//                    .execute();
+//            Log.d(LOG_TAG, "after mService.execute. result: "+result.getFiles().size());
+//            List<File> files = result.getFiles();
+//            if (files != null) {
+//                for (File file : files) {
+//                    fileInfo.add(String.format("%s (%s)\n",
+//                            file.getName(), file.getId()));
+//                    Log.d(LOG_TAG, "found: "+String.format("%s %s %s (%s)\n",
+//                            file.getName(), file.getKind(), file.getParents(), file.getId()));
+//
+//                }
+//            }
+//            return fileInfo;
+//        }
+//
+//
+//        @Override
+//        protected void onPreExecute() {
+////            mOutputText.setText("");
+////            mProgress.show();
+//        }
+//
+//        @Override
+//        protected void onPostExecute(List<String> output) {
+////            mProgress.hide();
+//            if (output == null || output.size() == 0) {
+//                Toast.makeText(mContext, "No results returned.", Toast.LENGTH_SHORT).show();
+//            } else {
+//                output.add(0, "Data retrieved using the Drive API:");
+////                Toast.makeText.setText(TextUtils.join("\n", output));
+//            }
+//        }
+//
+//        @Override
+//        protected void onCancelled() {
+////            mProgress.hide();
+//            if (mLastError != null) {
+//                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
+//                    showGooglePlayServicesAvailabilityErrorDialog(
+//                            ((GooglePlayServicesAvailabilityIOException) mLastError)
+//                                    .getConnectionStatusCode());
+//                } else if (mLastError instanceof UserRecoverableAuthIOException) {
+//                    startActivityForResult(
+//                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
+//                            MainActivity.REQUEST_AUTHORIZATION);
+//                } else {
+//                    Toast.makeText(mContext, "The following error occurred:\n"
+//                            + mLastError.getMessage(), Toast.LENGTH_LONG).show();
+//                }
+//            } else {
+//                Toast.makeText(mContext, "Request cancelled.", Toast.LENGTH_SHORT).show();
+//            }
+//        }
+//    }
 
     /**
      * Checks whether the device currently has a network connection.

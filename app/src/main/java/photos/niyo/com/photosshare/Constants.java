@@ -22,6 +22,8 @@ public class Constants {
             PhotosShareColumns.FOLDER_NAME,
             PhotosShareColumns.CREATE_AT,
             PhotosShareColumns.SHARED_WITH,
-            PhotosShareColumns.LOCATION
+            PhotosShareColumns.LOCATION,
+            PhotosShareColumns.START_DATE,
+            PhotosShareColumns.END_DATE
     };
 }

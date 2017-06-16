@@ -28,11 +28,14 @@ public class InsertNewFolderTask extends AsyncTask<Folder, Void, Boolean> {
         Folder folder = params[0];
         ContentValues values = new ContentValues();
 
+        values.put(PhotosShareColumns.FOLDER_ID, folder.getId());
         values.put(PhotosShareColumns.FOLDER_NAME, folder.getName());
         values.put(PhotosShareColumns.CREATE_AT, folder.getCreatedAt());
+        values.put(PhotosShareColumns.START_DATE, folder.getStartDate());
+        values.put(PhotosShareColumns.END_DATE, folder.getEndDate());
         Uri result = _context.getContentResolver().insert(Constants.FOLDERS_URI, values);
 
-        Log.d(LOG_TAG, "added a folder name "+folder.getName()+" result was "+result.toString());
+        Log.d(LOG_TAG, "added a folder name "+folder.getName()+" result was "+result);
         return true;
     }
 

@@ -201,13 +201,6 @@ public class CreateEvent extends AppCompatActivity  {
 
         @Override
         protected void onPostExecute(Boolean result) {
-//            mProgress.hide();
-//            if (output == null || output.size() == 0) {
-//                Toast.makeText(mContext, "No results returned.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                output.add(0, "Data retrieved using the Drive API:");
-////                Toast.makeText.setText(TextUtils.join("\n", output));
-//            }
             if (result) {
                 mCaller.success(true);
             }
@@ -218,7 +211,6 @@ public class CreateEvent extends AppCompatActivity  {
 
         @Override
         protected void onCancelled() {
-//            mProgress.hide();
             if (mLastError != null) {
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     showGooglePlayServicesAvailabilityErrorDialog(
@@ -295,7 +287,8 @@ public class CreateEvent extends AppCompatActivity  {
         ServiceCaller caller = new ServiceCaller() {
             @Override
             public void success(Object data) {
-                insertNewFolderToDb(folderName);
+                Folder createdFolder = (Folder)data;
+                insertNewFolderToDb(createdFolder);
             }
 
             @Override
@@ -309,7 +302,7 @@ public class CreateEvent extends AppCompatActivity  {
 
     }
 
-    private class MakeRequestTask extends AsyncTask<String, Void, Boolean> {
+    private class MakeRequestTask extends AsyncTask<String, Void, Folder> {
         private com.google.api.services.drive.Drive mService = null;
         private Exception mLastError = null;
         private Context mContext;
@@ -332,15 +325,15 @@ public class CreateEvent extends AppCompatActivity  {
          * @param params no parameters needed for this task.
          */
         @Override
-        protected Boolean doInBackground(String... params) {
-            Log.d(LOG_TAG, "doInBackground started");
+        protected Folder doInBackground(String... params) {
+            Log.d(LOG_TAG, "[MakeRequestTask] doInBackground started");
             try {
                 return createFolder(params[0]);
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Error!! " ,e);
                 mLastError = e;
                 cancel(true);
-                return false;
+                return null;
             }
         }
 
@@ -350,7 +343,7 @@ public class CreateEvent extends AppCompatActivity  {
          *         found.
          * @throws IOException
          */
-        private Boolean createFolder(String folderName) throws IOException {
+        private Folder createFolder(String folderName) throws IOException {
             // Get a list of up to 10 files.
             Log.d(LOG_TAG, "createFolder started");
             File fileMetadata = new File();
@@ -363,7 +356,17 @@ public class CreateEvent extends AppCompatActivity  {
             Log.d(LOG_TAG, "createFolder finished with file id: "+file.getId());
 
             mFolderId = file.getId();
-            return file.getId() != null;
+            Folder createdFolder = new Folder();
+            createdFolder.setName(folderName);
+            Calendar cal = Calendar.getInstance();
+            Long now = cal.getTimeInMillis();
+            cal.add(Calendar.DAY_OF_WEEK, 3);
+            Long end = cal.getTimeInMillis();
+            createdFolder.setId(file.getId());
+            createdFolder.setCreatedAt(now);
+            createdFolder.setStartDate(now);
+            createdFolder.setEndDate(end);
+            return createdFolder;
         }
 
 
@@ -374,19 +377,12 @@ public class CreateEvent extends AppCompatActivity  {
         }
 
         @Override
-        protected void onPostExecute(Boolean result) {
-//            mProgress.hide();
-//            if (output == null || output.size() == 0) {
-//                Toast.makeText(mContext, "No results returned.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                output.add(0, "Data retrieved using the Drive API:");
-////                Toast.makeText.setText(TextUtils.join("\n", output));
-//            }
-            if (result) {
-                mCaller.success(true);
+        protected void onPostExecute(Folder result) {
+            if (result != null) {
+                mCaller.success(result);
             }
             else {
-                mCaller.failure(result, "error");
+                mCaller.failure(null, "error");
             }
         }
 
@@ -446,11 +442,11 @@ public class CreateEvent extends AppCompatActivity  {
         dialog.show();
     }
 
-    private void insertNewFolderToDb(final String folderName) {
+    private void insertNewFolderToDb(final Folder createdFolder) {
         ServiceCaller caller = new ServiceCaller() {
             @Override
             public void success(Object data) {
-                Log.d(LOG_TAG, "folder "+folderName+" created successfully");
+                Log.d(LOG_TAG, "folder "+createdFolder.getName()+" created successfully");
             }
 
             @Override
@@ -460,9 +456,16 @@ public class CreateEvent extends AppCompatActivity  {
         };
 
         InsertNewFolderTask task = new InsertNewFolderTask(this, caller);
-        Folder folder = new Folder();
-        folder.setName(folderName);
-        folder.setCreatedAt(Calendar.getInstance().getTimeInMillis());
-        task.execute(folder);
+//        Folder folder = new Folder();
+//        folder.setName(folderName);
+//        folder.setCreatedAt(Calendar.getInstance().getTimeInMillis());
+//        Calendar cal = Calendar.getInstance();
+//        Long now = cal.getTimeInMillis();
+//        cal.add(Calendar.DAY_OF_WEEK, 3);
+//        Long end = cal.getTimeInMillis();
+//        folder.setStartDate(now);
+//        folder.setEndDate(end);
+//        Log.d(LOG_TAG, "adding new folder with start: "+now+" end: "+end);
+        task.execute(createdFolder);
     }
 }
