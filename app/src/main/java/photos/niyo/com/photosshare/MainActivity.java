@@ -498,11 +498,15 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 String foldeName = cursor.getString(colFolderNameIndex);
 
                 int colCreatedAtIndex = cursor.getColumnIndex(PhotosShareColumns.CREATE_AT);
+                int colStartDateIndex = cursor.getColumnIndex(PhotosShareColumns.START_DATE);
+                int colEndDateIndex = cursor.getColumnIndex(PhotosShareColumns.END_DATE);
                 String createdAt = cursor.getString(colCreatedAtIndex);
                 Folder folder = new Folder();
                 Log.d(LOG_TAG, "adding "+foldeName);
                 folder.setName(foldeName);
                 folder.setCreatedAt(Long.valueOf(createdAt));
+                folder.setStartDate(cursor.getLong(colStartDateIndex));
+                folder.setEndDate(cursor.getLong(colEndDateIndex));
                 mFoldersList.add(folder);
                 cursor.moveToNext();
             }

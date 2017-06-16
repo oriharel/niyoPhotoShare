@@ -98,20 +98,21 @@ public class CreateEvent extends AppCompatActivity  {
             String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
                 credential.setSelectedAccountName(accountName);
+                ServiceCaller caller = new ServiceCaller() {
+                    @Override
+                    public void success(Object data) {
+
+                    }
+
+                    @Override
+                    public void failure(Object data, String description) {
+
+                    }
+                };
+                new MakePermissionRequest(credential, caller, this).execute(mFolderId);
             }
 
-            ServiceCaller caller = new ServiceCaller() {
-                @Override
-                public void success(Object data) {
 
-                }
-
-                @Override
-                public void failure(Object data, String description) {
-
-                }
-            };
-            new MakePermissionRequest(credential, caller, this).execute(mFolderId);
 
         }
         else {
@@ -278,28 +279,25 @@ public class CreateEvent extends AppCompatActivity  {
                 .setBackOff(new ExponentialBackOff());
         SharedPreferences pref = getApplicationContext().getSharedPreferences("app", Context.MODE_PRIVATE);
         String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
+        String folderName = eventNameET.getText().toString();
         if (accountName != null) {
             credential.setSelectedAccountName(accountName);
+
+            ServiceCaller caller = new ServiceCaller() {
+                @Override
+                public void success(Object data) {
+                    Folder createdFolder = (Folder)data;
+                    insertNewFolderToDb(createdFolder);
+                }
+
+                @Override
+                public void failure(Object data, String description) {
+                    Log.e(LOG_TAG, "Error occured while creating folder in Drive");
+                }
+            };
+
+            new MakeRequestTask(credential, caller, this).execute(folderName);
         }
-
-        final String folderName = eventNameET.getText().toString();
-
-        ServiceCaller caller = new ServiceCaller() {
-            @Override
-            public void success(Object data) {
-                Folder createdFolder = (Folder)data;
-                insertNewFolderToDb(createdFolder);
-            }
-
-            @Override
-            public void failure(Object data, String description) {
-                Log.e(LOG_TAG, "Error occured while creating folder in Drive");
-            }
-        };
-
-        new MakeRequestTask(credential, caller, this).execute(folderName);
-
-
     }
 
     private class MakeRequestTask extends AsyncTask<String, Void, Folder> {
@@ -369,12 +367,6 @@ public class CreateEvent extends AppCompatActivity  {
             return createdFolder;
         }
 
-
-        @Override
-        protected void onPreExecute() {
-//            mOutputText.setText("");
-//            mProgress.show();
-        }
 
         @Override
         protected void onPostExecute(Folder result) {
@@ -456,16 +448,6 @@ public class CreateEvent extends AppCompatActivity  {
         };
 
         InsertNewFolderTask task = new InsertNewFolderTask(this, caller);
-//        Folder folder = new Folder();
-//        folder.setName(folderName);
-//        folder.setCreatedAt(Calendar.getInstance().getTimeInMillis());
-//        Calendar cal = Calendar.getInstance();
-//        Long now = cal.getTimeInMillis();
-//        cal.add(Calendar.DAY_OF_WEEK, 3);
-//        Long end = cal.getTimeInMillis();
-//        folder.setStartDate(now);
-//        folder.setEndDate(end);
-//        Log.d(LOG_TAG, "adding new folder with start: "+now+" end: "+end);
         task.execute(createdFolder);
     }
 }

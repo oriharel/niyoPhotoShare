@@ -1,12 +1,14 @@
 package photos.niyo.com.photosshare;
 
-import android.content.Context;
-import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 /**
  * Created by oriharel on 04/06/2017.
@@ -14,17 +16,17 @@ import android.widget.TextView;
 
 public class FolderViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
     public static final String LOG_TAG = FolderViewHolder.class.getSimpleName();
-    private ImageView mItemImage;
-    private TextView mItemDate;
-    private TextView mItemDescription;
+    private ImageView mFolderImage;
+    private TextView mFolderName;
+    private TextView mFolderDescription;
     private Folder mFolder;
 
     public FolderViewHolder(View v) {
         super(v);
 
-        mItemImage = (ImageView) v.findViewById(R.id.item_image);
-        mItemDate = (TextView) v.findViewById(R.id.item_date);
-        mItemDescription = (TextView) v.findViewById(R.id.item_description);
+        mFolderImage = (ImageView) v.findViewById(R.id.folder_event_image);
+        mFolderName = (TextView) v.findViewById(R.id.folder_event_title);
+        mFolderDescription = (TextView) v.findViewById(R.id.folder_description);
         v.setOnClickListener(this);
     }
 
@@ -37,7 +39,14 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
     public void bindFolder(Folder folder) {
         Log.d(LOG_TAG, "bindFolder started");
         mFolder = folder;
-        mItemDate.setText(folder.getCreatedAt().toString());
-        mItemDescription.setText(folder.getName());
+        mFolderName.setText(folder.getName());
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(folder.getStartDate());
+
+        DateFormat sdf = DateFormat.getDateInstance();
+
+        SimpleDateFormat.getDateInstance();
+
+        mFolderDescription.setText("Start: "+sdf.format(cal.getTime()));
     }
 }
