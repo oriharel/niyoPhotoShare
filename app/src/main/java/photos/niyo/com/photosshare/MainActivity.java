@@ -515,7 +515,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             while (!cursor.isAfterLast()) {
                 int colFolderNameIndex = cursor.getColumnIndex(PhotosShareColumns.FOLDER_NAME);
                 String foldeName = cursor.getString(colFolderNameIndex);
-
+                int colFolderIdIndex = cursor.getColumnIndex(PhotosShareColumns.FOLDER_ID);
+                String folderId = cursor.getString(colFolderIdIndex);
                 int colCreatedAtIndex = cursor.getColumnIndex(PhotosShareColumns.CREATE_AT);
                 int colStartDateIndex = cursor.getColumnIndex(PhotosShareColumns.START_DATE);
                 int colEndDateIndex = cursor.getColumnIndex(PhotosShareColumns.END_DATE);
@@ -526,6 +527,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 folder.setCreatedAt(Long.valueOf(createdAt));
                 folder.setStartDate(cursor.getLong(colStartDateIndex));
                 folder.setEndDate(cursor.getLong(colEndDateIndex));
+                folder.setId(folderId);
                 mFoldersList.add(folder);
                 cursor.moveToNext();
             }

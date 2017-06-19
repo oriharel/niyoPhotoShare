@@ -7,6 +7,7 @@ import android.util.Log;
 import photos.niyo.com.photosshare.db.InsertNewFoldersTask;
 import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
 import photos.niyo.com.photosshare.tasks.GetFoldersTask;
+import photos.niyo.com.photosshare.tasks.IsFoldersChangeTask;
 
 /**
  * Created by oriharel on 19/06/2017.
@@ -33,19 +34,38 @@ public class FolderSyncService extends JobService {
             @Override
             public void success(Object data) {
 
-                DriveAPIsTask.DriveApiResult result = (DriveAPIsTask.DriveApiResult)data;
+                final DriveAPIsTask.DriveApiResult result = (DriveAPIsTask.DriveApiResult)data;
 
                 Log.d(LOG_TAG, "received success from GetFoldersTask with "
                         +result.getFolders().length+" shared folders");
 
-                //TODO should be on a different thread
-                getApplicationContext().getContentResolver().delete(Constants.FOLDERS_URI, null, null);
+                ServiceCaller needToUpdateCaller = new ServiceCaller() {
+                    @Override
+                    public void success(Object data) {
+                        Boolean isNeedToUpdate = (Boolean)data;
+                        if (isNeedToUpdate) {
+                            //TODO should be on a different thread
+                            getApplicationContext().getContentResolver().delete(Constants.FOLDERS_URI, null, null);
 
-                if (result.getFolders().length > 0) {
-                    InsertNewFoldersTask task = new InsertNewFoldersTask(getApplicationContext(),
-                            dbCaller);
-                    task.execute(result.getFolders());
-                }
+                            if (result.getFolders().length > 0) {
+                                InsertNewFoldersTask task = new InsertNewFoldersTask(getApplicationContext(),
+                                        dbCaller);
+                                task.execute(result.getFolders());
+                            }
+                        }
+                        else {
+                            Log.d(LOG_TAG, "all is synced");
+                        }
+                    }
+
+                    @Override
+                    public void failure(Object data, String description) {
+                        Log.e(LOG_TAG, "Error from need to update query");
+                    }
+                };
+
+                checkIfNeedToUpdate(result.getFolders(), needToUpdateCaller);
+
             }
 
             @Override
@@ -58,6 +78,11 @@ public class FolderSyncService extends JobService {
         GetFoldersTask task = new GetFoldersTask(getApplicationContext(), caller);
         task.execute();
         return false;
+    }
+
+    private void checkIfNeedToUpdate(Folder[] folders, ServiceCaller caller) {
+        IsFoldersChangeTask task = new IsFoldersChangeTask(getApplicationContext(), caller);
+        task.execute(folders);
     }
 
     @Override
