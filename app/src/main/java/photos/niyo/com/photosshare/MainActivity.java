@@ -129,12 +129,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         SharedPreferences pref = getApplicationContext().getSharedPreferences("app",
                 Context.MODE_PRIVATE);
         String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
+        Log.d(LOG_TAG, "accountName found is: "+accountName);
         mCredential.setSelectedAccountName(accountName);
         getResultsFromApi();
     }
 
     private void getResultsFromApi() {
-        Log.d(LOG_TAG, "getResultsFromApi started");
+        Log.d(LOG_TAG, "getResultsFromApi started mCredential.getSelectedAccountName() = "+mCredential.getSelectedAccountName());
         if (! isGooglePlayServicesAvailable()) {
             acquireGooglePlayServices();
         } else if (mCredential.getSelectedAccountName() == null) {
@@ -261,8 +262,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @AfterPermissionGranted(REQUEST_PERMISSION_GET_ACCOUNTS)
     private void chooseAccount() {
+        Log.d(LOG_TAG, "chooseAccount started");
         if (EasyPermissions.hasPermissions(
                 this, Manifest.permission.GET_ACCOUNTS)) {
+            Log.d(LOG_TAG, "already has permissions to GET_ACCOUNTS");
             String accountName = getSharedPreferences("app", Context.MODE_PRIVATE)
                     .getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
@@ -276,6 +279,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         } else {
             // Request the GET_ACCOUNTS permission via a user dialog
+            Log.d(LOG_TAG, "need permission to GET_ACCOUNTS");
             EasyPermissions.requestPermissions(
                     this,
                     "This app needs to access your Google account (via Contacts).",
@@ -333,6 +337,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     protected void onActivityResult(
             int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Log.d(LOG_TAG, "onActivityResult called with requestCode: "+requestCode);
         switch(requestCode) {
             case REQUEST_GOOGLE_PLAY_SERVICES:
                 if (resultCode != RESULT_OK) {
@@ -350,6 +355,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         SharedPreferences.Editor editor = settings.edit();
                         editor.putString(PREF_ACCOUNT_NAME, accountName);
                         editor.apply();
+                        getResultsFromApi();
                     }
                 }
                 break;
@@ -364,6 +370,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[], @NonNull int[] grantResults) {
+
+        Log.d(LOG_TAG, "onRequestPermissionsResult called with requestCode: "+requestCode);
         switch (requestCode) {
             case Constants.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: {
                 // If request is cancelled, the result arrays are empty.
@@ -383,6 +391,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     // functionality that depends on this permission.
                 }
                 return;
+            }
+            case REQUEST_PERMISSION_GET_ACCOUNTS: {
+                getResultsFromApi();
             }
 
             // other 'case' lines to check for other
@@ -467,6 +478,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     protected void onResume(){
         super.onResume();
+        Log.d(LOG_TAG, "onResume started");
         getLoaderManager().restartLoader(0, null, this);
     }
 
