@@ -21,6 +21,7 @@ public class DeleteFolderTask extends DriveAPIsTask {
     @Override
     protected DriveApiResult actualDoInBackground(Folder... params) {
         Folder folder = params[0];
+        Log.d(LOG_TAG, "actualDoInBackground started with "+folder.getName());
         DriveApiResult result = new DriveApiResult();
         try {
             mService.files().delete(folder.getId()).execute();

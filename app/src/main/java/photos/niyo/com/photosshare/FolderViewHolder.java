@@ -10,6 +10,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.DeleteFolderTask;
 import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
 
@@ -37,13 +38,31 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
 
     //5
     @Override
-    public void onClick(View v) {
+    public void onClick(final View v) {
         Log.d(LOG_TAG, "CLICK!");
         if (v.getId() == R.id.delete_folder) {
+
+            final ServiceCaller deleteCaller = new ServiceCaller() {
+                @Override
+                public void success(Object data) {
+                    Log.d(LOG_TAG, "folder "+mFolder.getName()+" successfully deleted form db");
+                }
+
+                @Override
+                public void failure(Object data, String description) {
+                    Log.e(LOG_TAG, "error deleting "+mFolder.getName()+" form db");
+                }
+            };
+
             ServiceCaller caller = new ServiceCaller() {
                 @Override
                 public void success(Object data) {
-                    //delete from db
+
+                    Log.d(LOG_TAG, "FolderViewHolder received success from drive api delete");
+                    Log.d(LOG_TAG, "deleting "+mFolder.getName()+" from db now");
+                    DeleteFolderFromDbTask task = new DeleteFolderFromDbTask(v.getContext(),
+                            deleteCaller);
+                    task.execute(mFolder);
                 }
 
                 @Override
