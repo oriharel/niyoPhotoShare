@@ -10,6 +10,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import photos.niyo.com.photosshare.tasks.DeleteFolderTask;
+import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
+
 /**
  * Created by oriharel on 04/06/2017.
  */
@@ -20,6 +23,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
     private TextView mFolderName;
     private TextView mFolderDescription;
     private Folder mFolder;
+    private TextView mDeleteAction;
 
     public FolderViewHolder(View v) {
         super(v);
@@ -27,13 +31,28 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mFolderImage = (ImageView) v.findViewById(R.id.folder_event_image);
         mFolderName = (TextView) v.findViewById(R.id.folder_event_title);
         mFolderDescription = (TextView) v.findViewById(R.id.folder_description);
-        v.setOnClickListener(this);
+        mDeleteAction = (TextView)v.findViewById(R.id.delete_folder);
+        mDeleteAction.setOnClickListener(this);
     }
 
     //5
     @Override
     public void onClick(View v) {
         Log.d(LOG_TAG, "CLICK!");
+        if (v.getId() == R.id.delete_folder) {
+            ServiceCaller caller = new ServiceCaller() {
+                @Override
+                public void success(Object data) {
+                    //delete from db
+                }
+
+                @Override
+                public void failure(Object data, String description) {
+
+                }
+            };
+            new DeleteFolderTask(v.getContext(), caller).execute(mFolder);
+        }
     }
 
     public void bindFolder(Folder folder) {

@@ -26,7 +26,8 @@ public class FoldersListAdapter extends RecyclerView.Adapter {
         Log.d(LOG_TAG, "onCreateViewHolder started");
         View inflatedView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.folder_item, parent, false);
-        return new FolderViewHolder(inflatedView);
+        FolderViewHolder holder = new FolderViewHolder(inflatedView);
+        return holder;
     }
 
     @Override

@@ -37,10 +37,11 @@ import com.google.api.services.drive.model.Permission;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
-import photos.niyo.com.photosshare.db.InsertNewFolderTask;
+import photos.niyo.com.photosshare.db.InsertNewFoldersTask;
 
-import static photos.niyo.com.photosshare.MainActivity.LOG_TAG;
 import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
 import static photos.niyo.com.photosshare.MainActivity.REQUEST_AUTHORIZATION;
 import static photos.niyo.com.photosshare.MainActivity.REQUEST_GOOGLE_PLAY_SERVICES;
@@ -344,9 +345,25 @@ public class CreateEvent extends AppCompatActivity  {
         private Folder createFolder(String folderName) throws IOException {
             // Get a list of up to 10 files.
             Log.d(LOG_TAG, "createFolder started");
+
+            Folder createdFolder = new Folder();
+            createdFolder.setName(folderName);
+            Calendar cal = Calendar.getInstance();
+            Long now = cal.getTimeInMillis();
+            Long startDate = now;
+            cal.add(Calendar.DAY_OF_WEEK, 3);
+            Long end = cal.getTimeInMillis();
+
+
             File fileMetadata = new File();
             fileMetadata.setName(folderName);
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
+            Map<String, String> props = new HashMap<>();
+            props.put(Folder.APP_ID, getPackageName());
+            props.put("start_date", startDate.toString());
+            props.put("end_date", end.toString());
+            props.put("created_at", now.toString());
+            fileMetadata.setAppProperties(props);
 
             File file = mService.files().create(fileMetadata)
                     .setFields("id")
@@ -354,15 +371,10 @@ public class CreateEvent extends AppCompatActivity  {
             Log.d(LOG_TAG, "createFolder finished with file id: "+file.getId());
 
             mFolderId = file.getId();
-            Folder createdFolder = new Folder();
-            createdFolder.setName(folderName);
-            Calendar cal = Calendar.getInstance();
-            Long now = cal.getTimeInMillis();
-            cal.add(Calendar.DAY_OF_WEEK, 3);
-            Long end = cal.getTimeInMillis();
+
             createdFolder.setId(file.getId());
             createdFolder.setCreatedAt(now);
-            createdFolder.setStartDate(now);
+            createdFolder.setStartDate(startDate);
             createdFolder.setEndDate(end);
             return createdFolder;
         }
@@ -447,7 +459,7 @@ public class CreateEvent extends AppCompatActivity  {
             }
         };
 
-        InsertNewFolderTask task = new InsertNewFolderTask(this, caller);
+        InsertNewFoldersTask task = new InsertNewFoldersTask(this, caller);
         task.execute(createdFolder);
     }
 }

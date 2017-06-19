@@ -7,6 +7,8 @@ import java.util.Date;
  */
 
 public class Folder {
+    public static final String APP_ID = "app_id";
+
     public String getName() {
         return _name;
     }

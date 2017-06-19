@@ -74,6 +74,7 @@ public class PhotosShareProvider extends ContentProvider {
                 selection,                     // The incoming where clause column names
                 selectionArgs                  // The incoming where clause values
         );
+        getContext().getContentResolver().notifyChange(uri, null);
         return count;
     }
 

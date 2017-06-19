@@ -120,13 +120,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         };
         registerForChanges();
-        requestPermissionForPhotosRead();
 
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
                 getApplicationContext(), Arrays.asList(SCOPES))
                 .setBackOff(new ExponentialBackOff());
 
+        SharedPreferences pref = getApplicationContext().getSharedPreferences("app",
+                Context.MODE_PRIVATE);
+        String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
+        mCredential.setSelectedAccountName(accountName);
         getResultsFromApi();
     }
 
@@ -139,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         } else if (! isDeviceOnline()) {
             Toast.makeText(this, "No network connection available.", Toast.LENGTH_SHORT).show();
         } else {
-//            new MakeRequestTask(mCredential, this).execute();
+            requestPermissionForPhotosRead();
         }
     }
 
@@ -406,7 +409,23 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             else {
                 schedulePhotosJob();
             }
+
+            scheduleFoldersSync();
         }
+    }
+
+    private void scheduleFoldersSync() {
+        Log.d(LOG_TAG, "scheduleFoldersSync started");
+        mJobScheduler = (JobScheduler)
+                getSystemService( Context.JOB_SCHEDULER_SERVICE );
+
+        JobInfo.Builder builder = new JobInfo.Builder( 1,
+                new ComponentName( getPackageName(),FolderSyncService.class.getName() ) );
+
+        builder.setPeriodic(JOB_PERIODIC_INTERVAL);
+
+        mJobScheduler.schedule(builder.build());
+        Log.i(LOG_TAG, "FolderSyncService JOB SCHEDULED!");
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)

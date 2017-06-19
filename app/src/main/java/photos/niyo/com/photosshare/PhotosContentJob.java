@@ -126,7 +126,6 @@ public class PhotosContentJob extends JobService{
         String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
         if (accountName != null) {
             mCredential.setSelectedAccountName(accountName);
-//            getResultsFromApi();
         }
     }
 
