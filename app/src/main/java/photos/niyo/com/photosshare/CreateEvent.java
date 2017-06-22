@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -77,18 +78,18 @@ public class CreateEvent extends AppCompatActivity  {
             }
         });
 
-        Button permButton = (Button)findViewById(R.id.permBtn);
+        final Button permButton = (Button)findViewById(R.id.permBtn);
         permButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                createPermission();
+                createPermission(permButton);
             }
         });
 
 
     }
 
-    private void createPermission() {
+    private void createPermission(View v) {
         if (mFolderId != null) {
             String[] SCOPES = { DriveScopes.DRIVE };
 
@@ -110,7 +111,7 @@ public class CreateEvent extends AppCompatActivity  {
 
                     }
                 };
-                new MakePermissionRequest(credential, caller, this).execute(mFolderId);
+                new MakePermissionRequest(credential, caller, v).execute(mFolderId);
             }
 
 
@@ -125,9 +126,10 @@ public class CreateEvent extends AppCompatActivity  {
         private com.google.api.services.drive.Drive mService = null;
         private Exception mLastError = null;
         private Context mContext;
+        private View mV;
         ServiceCaller mCaller;
 
-        MakePermissionRequest(GoogleAccountCredential credential, ServiceCaller caller, Context context) {
+        MakePermissionRequest(GoogleAccountCredential credential, ServiceCaller caller, View v) {
             HttpTransport transport = AndroidHttp.newCompatibleTransport();
             JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
             Log.d(LOG_TAG, "making request with credentials: "+credential.getSelectedAccountName());
@@ -135,8 +137,9 @@ public class CreateEvent extends AppCompatActivity  {
                     transport, jsonFactory, credential)
                     .setApplicationName("Drive API Android Quickstart")
                     .build();
-            mContext = context;
+            mContext = v.getContext();
             mCaller = caller;
+            mV = v;
         }
 
         JsonBatchCallback<Permission> callback = new JsonBatchCallback<Permission>() {
@@ -146,6 +149,7 @@ public class CreateEvent extends AppCompatActivity  {
                     throws IOException {
                 // Handle error
                 Log.e(LOG_TAG, "mService.permissions(): "+e.getMessage());
+                Snackbar.make(mV, "Unable to grant permission", Snackbar.LENGTH_LONG);
             }
 
             @Override
@@ -153,6 +157,7 @@ public class CreateEvent extends AppCompatActivity  {
                                   HttpHeaders responseHeaders)
                     throws IOException {
                 Log.d(LOG_TAG, "mService.permissions() Permission ID: " + permission.getId());
+                Snackbar.make(mV, "Permission granted for "+permission.getEmailAddress(), Snackbar.LENGTH_LONG);
             }
         };
 
@@ -183,10 +188,12 @@ public class CreateEvent extends AppCompatActivity  {
             // Get a list of up to 10 files.
             Log.d(LOG_TAG, "createPermissionBatch started");
             BatchRequest batch = mService.batch();
+            EditText et = (EditText)findViewById(R.id.inviteEditBox);
+            String invitee = et.getEditableText().toString();
             Permission userPermission = new Permission()
                     .setType("user")
                     .setRole("writer")
-                    .setEmailAddress("ori.harel@capriza.com");
+                    .setEmailAddress(invitee);
             mService.permissions().create(fileId, userPermission)
                     .setFields("id")
                     .queue(batch, callback);

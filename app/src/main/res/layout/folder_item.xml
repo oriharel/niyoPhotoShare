@@ -23,7 +23,7 @@
                 android:id="@+id/folder_event_image"
                 android:layout_width="wrap_content"
                 android:layout_height="250dp"
-                app:srcCompat="@drawable/bridgehouse" />
+                android:contentDescription="@string/preview_description" />
 
             <TextView
                 android:id="@+id/folder_event_title"

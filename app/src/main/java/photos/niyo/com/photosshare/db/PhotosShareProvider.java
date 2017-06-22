@@ -17,7 +17,7 @@ import photos.niyo.com.photosshare.AndroidUtil;
 import photos.niyo.com.photosshare.Constants;
 
 public class PhotosShareProvider extends ContentProvider {
-    public static final String LOG_TAG = PhotosShareDbHelper.class.getSimpleName();
+    public static final String LOG_TAG = PhotosShareProvider.class.getSimpleName();
     private PhotosShareDbHelper _dbHelper;
     private static final String DATABASE_NAME = "photosShare.db";
     private static final int DATABASE_VERSION = 1;

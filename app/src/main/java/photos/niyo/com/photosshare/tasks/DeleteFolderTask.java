@@ -25,6 +25,7 @@ public class DeleteFolderTask extends DriveAPIsTask {
         DriveApiResult result = new DriveApiResult();
         try {
             mService.files().delete(folder.getId()).execute();
+            Log.d(LOG_TAG, "folder "+folder.getName()+" deleted");
             result.setResult(true);
         } catch (IOException e) {
             String message = "An error occurred: " + e;

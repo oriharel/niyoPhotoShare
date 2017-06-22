@@ -30,16 +30,31 @@
         android:ems="10"
         android:inputType="textPersonName" />
 
+    <EditText
+        android:id="@+id/inviteEditBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="@string/nameOrEmail"
+        android:layout_marginLeft="@dimen/side_margin"
+        android:layout_marginRight="@dimen/side_margin"
+        android:inputType="textEmailAddress" />
+
     <Button
         android:id="@+id/createFolderBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/side_margin"
+        android:layout_marginRight="@dimen/side_margin"
+        android:layout_marginTop="20dp"
         android:text="Create" />
 
     <Button
         android:id="@+id/permBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/side_margin"
+        android:layout_marginRight="@dimen/side_margin"
         android:text="Permission" />
 
 </LinearLayout>

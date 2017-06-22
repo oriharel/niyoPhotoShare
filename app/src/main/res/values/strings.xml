@@ -6,4 +6,6 @@
     <string name="action_done">Done</string>
     <string name="event_name">Event Name</string>
     <string name="no_events_text">There are no events</string>
+    <string name="preview_description">Preview Photo of Album</string>
+    <string name="nameOrEmail">Type a name or an Email</string>
 </resources>

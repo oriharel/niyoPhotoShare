@@ -1,5 +1,6 @@
 package photos.niyo.com.photosshare;
 
+import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
@@ -46,6 +47,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
                 @Override
                 public void success(Object data) {
                     Log.d(LOG_TAG, "folder "+mFolder.getName()+" successfully deleted form db");
+                    Snackbar.make(v, "Folder "+mFolder.getName()+" successfully deleted", Snackbar.LENGTH_LONG);
                 }
 
                 @Override
