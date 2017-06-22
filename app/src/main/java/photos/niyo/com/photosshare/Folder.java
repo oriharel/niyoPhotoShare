@@ -1,5 +1,8 @@
 package photos.niyo.com.photosshare;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.Date;
 
 /**

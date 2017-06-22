@@ -11,6 +11,7 @@ import photos.niyo.com.photosshare.db.PhotosShareColumns;
 public class Constants {
     public static final String AUTHORITY = "com.niyo.photos.provider";
     public static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 1;
+    public static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 2;
     public static String SCHEME = "content://";
     public static final String FOLDERS_URI_STR = "/folders";
     public static final Uri FOLDERS_URI = Uri.parse(SCHEME + AUTHORITY + FOLDERS_URI_STR);

@@ -1,5 +1,6 @@
 package photos.niyo.com.photosshare;
 
+import android.content.Intent;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -11,6 +12,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import photos.niyo.com.photosshare.db.PhotosShareColumns;
 import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.DeleteFolderTask;
 import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
@@ -73,6 +75,11 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
                 }
             };
             new DeleteFolderTask(v.getContext(), caller).execute(mFolder);
+        }
+        else if (v.getId() == R.id.edit_folder) {
+            Intent intent = new Intent(v.getContext(), CreateEvent.class);
+            intent.putExtra(PhotosShareColumns.FOLDER_ID, mFolder.getId());
+            v.getContext().startActivity(intent);
         }
     }
 

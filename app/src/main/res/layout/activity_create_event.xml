@@ -30,15 +30,14 @@
         android:ems="10"
         android:inputType="textPersonName" />
 
-    <EditText
+    <com.android.ex.chips.RecipientEditTextView
         android:id="@+id/inviteEditBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/nameOrEmail"
         android:layout_marginLeft="@dimen/side_margin"
         android:layout_marginRight="@dimen/side_margin"
-        android:inputType="textEmailAddress" />
+        android:hint="@string/nameOrEmail"
+        android:minHeight="58dp" />
 
     <Button
         android:id="@+id/createFolderBtn"

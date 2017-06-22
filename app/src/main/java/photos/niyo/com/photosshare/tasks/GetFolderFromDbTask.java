@@ -13,25 +13,24 @@ import photos.niyo.com.photosshare.ServiceCaller;
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
 
 /**
- * Created by oriharel on 15/06/2017.
+ * Created by oriharel on 22/06/2017.
  */
 
-public class GetActiveFolderTask extends AsyncTask<Void, Void, Folder> {
+public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
+
     private Context mContext;
     private ServiceCaller mCaller;
-    public static final String LOG_TAG = GetActiveFolderTask.class.getSimpleName();
+    public static final String LOG_TAG = GetActiveFolderFromDbTask.class.getSimpleName();
 
-    public GetActiveFolderTask(Context context, ServiceCaller caller) {
+    public GetFolderFromDbTask(Context context, ServiceCaller caller) {
         mContext = context;
         mCaller = caller;
     }
 
     @Override
-    protected Folder doInBackground(Void... params) {
+    protected Folder doInBackground(String... params) {
         Folder result = null;
-        String selection = PhotosShareColumns.START_DATE+" < "+
-                Calendar.getInstance().getTimeInMillis()+" AND "+
-                PhotosShareColumns.END_DATE+" > "+Calendar.getInstance().getTimeInMillis();
+        String selection = getSelection(params);
 
         Log.d(LOG_TAG, String.format("querying db for active folder %s", selection));
 
@@ -64,5 +63,10 @@ public class GetActiveFolderTask extends AsyncTask<Void, Void, Folder> {
     protected void onPostExecute(Folder folder) {
         if (folder != null && folder.getId() != null) mCaller.success(folder);
         else mCaller.failure(null, "no active folder found");
+    }
+
+    protected String getSelection(String... params) {
+        String folderId = params[0];
+        return PhotosShareColumns.FOLDER_ID+"="+folderId;
     }
 }

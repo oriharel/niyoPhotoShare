@@ -24,7 +24,6 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
-import com.google.api.services.drive.model.FileList;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +32,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 
-import photos.niyo.com.photosshare.tasks.GetActiveFolderTask;
+import photos.niyo.com.photosshare.tasks.GetActiveFolderFromDbTask;
 import pub.devrel.easypermissions.EasyPermissions;
 
 import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
@@ -104,7 +103,7 @@ public class PhotosContentJob extends JobService{
             }
         };
 
-        GetActiveFolderTask folderTask = new GetActiveFolderTask(this, activeFolderCaller);
+        GetActiveFolderFromDbTask folderTask = new GetActiveFolderFromDbTask(this, activeFolderCaller);
         folderTask.execute();
 
         Log.d(LOG_TAG, "onStartJob ended");
