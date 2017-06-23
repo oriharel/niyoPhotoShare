@@ -22,13 +22,16 @@ public class PhotosShareProvider extends ContentProvider {
     private static final String DATABASE_NAME = "photosShare.db";
     private static final int DATABASE_VERSION = 1;
     private static final int FOLDERS_URI_CODE = 1;
+    private static final int USERS_URI_CODE = 2;
 
     private static final UriMatcher sUriMatcher;
     private static HashMap<String, String> sFoldersProjectionMap;
+    private static HashMap<String, String> sUsersProjectionMap;
 
     static {
         sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         sUriMatcher.addURI(Constants.AUTHORITY, Constants.FOLDERS_URI_STR, FOLDERS_URI_CODE);
+        sUriMatcher.addURI(Constants.AUTHORITY, Constants.USERS_URI_STR, USERS_URI_CODE);
 
         sFoldersProjectionMap = new HashMap<>();
         sFoldersProjectionMap.put(PhotosShareColumns._ID, PhotosShareColumns._ID);
@@ -39,6 +42,14 @@ public class PhotosShareProvider extends ContentProvider {
         sFoldersProjectionMap.put(PhotosShareColumns.LOCATION, PhotosShareColumns.LOCATION);
         sFoldersProjectionMap.put(PhotosShareColumns.START_DATE, PhotosShareColumns.START_DATE);
         sFoldersProjectionMap.put(PhotosShareColumns.END_DATE, PhotosShareColumns.END_DATE);
+
+
+        sUsersProjectionMap = new HashMap<>();
+        sUsersProjectionMap.put(UsersColumns._ID, UsersColumns._ID);
+        sUsersProjectionMap.put(UsersColumns.ID, UsersColumns.ID);
+        sUsersProjectionMap.put(UsersColumns.DISPLAY_NAME, UsersColumns.DISPLAY_NAME);
+        sUsersProjectionMap.put(UsersColumns.EMAIL_ADDRESS, UsersColumns.EMAIL_ADDRESS);
+        sUsersProjectionMap.put(UsersColumns.PHOTO_LINK, UsersColumns.PHOTO_LINK);
 
     }
     public PhotosShareProvider() {
@@ -69,11 +80,37 @@ public class PhotosShareProvider extends ContentProvider {
 
         int count;
 
-        count = db.delete(
-                PhotosShareDbHelper.APP_TABLE_NAME,  // The database table name
-                selection,                     // The incoming where clause column names
-                selectionArgs                  // The incoming where clause values
-        );
+        switch (sUriMatcher.match(uri)) {
+
+            // If the pattern is for home state, returns the general content type.
+            case FOLDERS_URI_CODE:
+            {
+                Log.d(LOG_TAG, "deleting folders table");
+                count = db.delete(
+                        PhotosShareDbHelper.FOLDERS_TABLE_NAME,  // The database table name
+                        selection,                     // The incoming where clause column names
+                        selectionArgs                  // The incoming where clause values
+                );
+                break;
+            }
+
+            // If the pattern is for home state, returns the general content type.
+            case USERS_URI_CODE:
+            {
+                Log.d(LOG_TAG, "deleting users table");
+                count = db.delete(
+                        PhotosShareDbHelper.USERS_TABLE_NAME,  // The database table name
+                        selection,                     // The incoming where clause column names
+                        selectionArgs                  // The incoming where clause values
+                );
+                break;
+            }
+
+            // If the URI pattern doesn't match any permitted patterns, throws an exception.
+            default:
+                throw new IllegalArgumentException("Unknown URI " + uri);
+        }
+
         getContext().getContentResolver().notifyChange(uri, null);
         return count;
     }
@@ -87,7 +124,11 @@ public class PhotosShareProvider extends ContentProvider {
 
             // If the pattern is for home state, returns the general content type.
             case FOLDERS_URI_CODE:
-                return Constants.CONTENT_TYPE;
+                return Constants.FOLDERS_CONTENT_TYPE;
+
+            // If the pattern is for home state, returns the general content type.
+            case USERS_URI_CODE:
+                return Constants.USERS_CONTENT_TYPE;
 
             // If the URI pattern doesn't match any permitted patterns, throws an exception.
             default:
@@ -96,11 +137,36 @@ public class PhotosShareProvider extends ContentProvider {
     }
 
     @Override
-    public Uri insert(Uri uri, ContentValues values) {
+    public Uri insert(@NonNull Uri uri, ContentValues values) {
         Log.d(LOG_TAG, "insert started "+uri);
-        String table = PhotosShareDbHelper.APP_TABLE_NAME;
+        String table = null;
+
+        switch (sUriMatcher.match(uri)) {
+
+            // If the pattern is for home state, returns the general content type.
+            case FOLDERS_URI_CODE:
+            {
+                Log.d(LOG_TAG, "inserting to folders table");
+                table = PhotosShareDbHelper.FOLDERS_TABLE_NAME;
+                break;
+            }
+
+            // If the pattern is for home state, returns the general content type.
+            case USERS_URI_CODE:
+            {
+                Log.d(LOG_TAG, "inserting to users table");
+                table = PhotosShareDbHelper.USERS_TABLE_NAME;
+                break;
+            }
+
+            // If the URI pattern doesn't match any permitted patterns, throws an exception.
+            default:
+                throw new IllegalArgumentException("Unknown URI " + uri);
+        }
+
         getWritableDb().insert(table, null, values);
         getContext().getContentResolver().notifyChange(uri, null);
+
         return uri;
     }
 
@@ -118,8 +184,32 @@ public class PhotosShareProvider extends ContentProvider {
                         String[] selectionArgs, String sortOrder) {
         Log.d(LOG_TAG, "query started with "+uri);
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+        String orderBy;
 
-        qb.setTables(PhotosShareDbHelper.APP_TABLE_NAME);
+        switch (sUriMatcher.match(uri)) {
+
+            // If the pattern is for home state, returns the general content type.
+            case FOLDERS_URI_CODE:
+            {
+                Log.d(LOG_TAG, "querying folders table");
+                qb.setTables(PhotosShareDbHelper.FOLDERS_TABLE_NAME);
+                orderBy = PhotosShareColumns.CREATE_AT;
+                break;
+            }
+
+            // If the pattern is for home state, returns the general content type.
+            case USERS_URI_CODE:
+            {
+                Log.d(LOG_TAG, "querying users table");
+                qb.setTables(PhotosShareDbHelper.USERS_TABLE_NAME);
+                orderBy = UsersColumns.DISPLAY_NAME;
+                break;
+            }
+
+            // If the URI pattern doesn't match any permitted patterns, throws an exception.
+            default:
+                throw new IllegalArgumentException("Unknown URI " + uri);
+        }
 
         qb.setProjectionMap(sFoldersProjectionMap);
 
@@ -127,9 +217,12 @@ public class PhotosShareProvider extends ContentProvider {
         Log.d(LOG_TAG, "projection is "+ AndroidUtil.getArrayAsString(projection));
         Log.d(LOG_TAG, "selectionArgs is "+AndroidUtil.getArrayAsString(selectionArgs));
         Log.d(LOG_TAG, "sort order is "+sortOrder);
-        String orderBy = PhotosShareColumns.CREATE_AT;
 
-        Cursor cursor = qb.query(getReadableDb(), projection, selection, selectionArgs, null, null, orderBy);
+        Cursor cursor = qb.query(getReadableDb(),
+                projection,
+                selection,
+                selectionArgs,
+                null, null, orderBy);
 
         Log.d(LOG_TAG, "got " + cursor.getCount()
                 + " results from uri " + uri);
@@ -153,7 +246,17 @@ public class PhotosShareProvider extends ContentProvider {
 
                 // Does the update and returns the number of rows updated.
                 count = db.update(
-                        PhotosShareDbHelper.APP_TABLE_NAME, // The database table name.
+                        PhotosShareDbHelper.FOLDERS_TABLE_NAME, // The database table name.
+                        values,                   // A map of column names and new values to use.
+                        selection,                    // The where clause column names.
+                        selectionArgs                 // The where clause column values to select on.
+                );
+                break;
+            case USERS_URI_CODE:
+
+                // Does the update and returns the number of rows updated.
+                count = db.update(
+                        PhotosShareDbHelper.USERS_TABLE_NAME, // The database table name.
                         values,                   // A map of column names and new values to use.
                         selection,                    // The where clause column names.
                         selectionArgs                 // The where clause column values to select on.

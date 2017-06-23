@@ -13,48 +13,57 @@ public class Folder {
     public static final String APP_ID = "app_id";
 
     public String getName() {
-        return _name;
+        return mName;
     }
 
     public Long getCreatedAt() {
-        return _createdAt;
+        return mCreatedAt;
     }
 
     public void setName(String name) {
-        _name = name;
+        mName = name;
     }
 
     public void setCreatedAt(Long creationDate) {
-        _createdAt = creationDate;
+        mCreatedAt = creationDate;
     }
 
-    private String _name;
-    private Long _createdAt;
-    private String _id;
-    private Long _startDate;
-    private Long _endDate;
+    private String mName;
+    private Long mCreatedAt;
+    private String mId;
+    private Long mStartDate;
+    private Long mEndDate;
+    private String mSharedWith;
 
     public String getId() {
-        return _id;
+        return mId;
     }
 
     public void setId(String id) {
-        this._id = id;
+        this.mId = id;
     }
 
     public Long getStartDate() {
-        return _startDate;
+        return mStartDate;
     }
 
     public void setStartDate(Long startDate) {
-        this._startDate = startDate;
+        this.mStartDate = startDate;
     }
 
     public Long getEndDate() {
-        return _endDate;
+        return mEndDate;
     }
 
     public void setEndDate(Long endDate) {
-        this._endDate = endDate;
+        this.mEndDate = endDate;
+    }
+
+    public String getSharedWith() {
+        return mSharedWith;
+    }
+
+    public void setSharedWith(String mSharedWith) {
+        this.mSharedWith = mSharedWith;
     }
 }

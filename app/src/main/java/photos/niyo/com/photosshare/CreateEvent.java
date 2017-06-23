@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -44,15 +43,18 @@ import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.Permission;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import photos.niyo.com.photosshare.db.InsertNewFoldersTask;
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
+import photos.niyo.com.photosshare.db.User;
+import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.GetFolderFromDbTask;
-import photos.niyo.com.photosshare.tasks.GetFoldersTask;
+import photos.niyo.com.photosshare.tasks.InsertUsersToDbTask;
 
 import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
 import static photos.niyo.com.photosshare.MainActivity.REQUEST_AUTHORIZATION;
@@ -173,7 +175,7 @@ public class CreateEvent extends AppCompatActivity  {
 
     }
 
-    private void createPermission(View v) {
+    private void createPermission(final View v) {
         if (mFolderId != null) {
             String[] SCOPES = { DriveScopes.DRIVE };
 
@@ -184,9 +186,28 @@ public class CreateEvent extends AppCompatActivity  {
             String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
                 credential.setSelectedAccountName(accountName);
+
+                final ServiceCaller usersCaller = new ServiceCaller() {
+                    @Override
+                    public void success(Object data) {
+
+                    }
+
+                    @Override
+                    public void failure(Object data, String description) {
+
+                    }
+                };
+
+
                 ServiceCaller caller = new ServiceCaller() {
                     @Override
                     public void success(Object data) {
+                        User[] users = (User[])data;
+
+                        InsertUsersToDbTask usersTask = new InsertUsersToDbTask(v.getContext(), usersCaller);
+
+                        usersTask.execute(users);
 
                     }
 
@@ -206,7 +227,7 @@ public class CreateEvent extends AppCompatActivity  {
         }
     }
 
-    private class MakePermissionRequest extends AsyncTask<String, Void, Boolean> {
+    private class MakePermissionRequest extends AsyncTask<String, Void, User[]> {
         private com.google.api.services.drive.Drive mService = null;
         private Exception mLastError = null;
         private Context mContext;
@@ -250,7 +271,7 @@ public class CreateEvent extends AppCompatActivity  {
          * @param params no parameters needed for this task.
          */
         @Override
-        protected Boolean doInBackground(String... params) {
+        protected User[] doInBackground(String... params) {
             Log.d(LOG_TAG, "[MakePermissionRequest] doInBackground started");
             try {
                 return createPermissionBatch(params[0]);
@@ -258,7 +279,7 @@ public class CreateEvent extends AppCompatActivity  {
                 Log.e(LOG_TAG, "[MakePermissionRequest] Error!! " ,e);
                 mLastError = e;
                 cancel(true);
-                return false;
+                return null;
             }
         }
 
@@ -268,21 +289,33 @@ public class CreateEvent extends AppCompatActivity  {
          *         found.
          * @throws IOException
          */
-        private Boolean createPermissionBatch(String fileId) throws IOException {
+        private User[] createPermissionBatch(String fileId) throws IOException {
             // Get a list of up to 10 files.
             Log.d(LOG_TAG, "createPermissionBatch started");
             BatchRequest batch = mService.batch();
             EditText et = (EditText)findViewById(R.id.inviteEditBox);
-            String invitee = et.getEditableText().toString();
-            Permission userPermission = new Permission()
-                    .setType("user")
-                    .setRole("writer")
-                    .setEmailAddress(invitee);
-            mService.permissions().create(fileId, userPermission)
-                    .setFields("id")
-                    .queue(batch, callback);
+            String inviteesStr = et.getEditableText().toString();
+            String[] invitees = inviteesStr.split(",");
+            List<User> users = new ArrayList<>();
+
+            for (String invitee :
+                    invitees) {
+                Permission userPermission = new Permission()
+                        .setType("user")
+                        .setRole("writer")
+                        .setEmailAddress(invitee);
+                mService.permissions().create(fileId, userPermission)
+                        .setFields("id")
+                        .queue(batch, callback);
+
+                User dbUser = new User();
+                dbUser.setEmailAddress(invitee);
+                users.add(dbUser);
+            }
+
             batch.execute();
-            return true;
+            User[] result = new User[users.size()];
+            return users.toArray(result);
         }
 
 
@@ -293,8 +326,8 @@ public class CreateEvent extends AppCompatActivity  {
         }
 
         @Override
-        protected void onPostExecute(Boolean result) {
-            if (result) {
+        protected void onPostExecute(User[] result) {
+            if (result != null) {
                 mCaller.success(true);
             }
             else {
@@ -467,6 +500,11 @@ public class CreateEvent extends AppCompatActivity  {
             createdFolder.setCreatedAt(now);
             createdFolder.setStartDate(startDate);
             createdFolder.setEndDate(end);
+
+            EditText et = (EditText)findViewById(R.id.inviteEditBox);
+            String inviteesStr = et.getEditableText().toString();
+            createdFolder.setSharedWith(inviteesStr);
+
             return createdFolder;
         }
 
@@ -550,7 +588,7 @@ public class CreateEvent extends AppCompatActivity  {
             }
         };
 
-        InsertNewFoldersTask task = new InsertNewFoldersTask(this, caller);
+        DeleteFolderFromDbTask.InsertFoldersToDbTask task = new DeleteFolderFromDbTask.InsertFoldersToDbTask(this, caller);
         task.execute(createdFolder);
     }
 }

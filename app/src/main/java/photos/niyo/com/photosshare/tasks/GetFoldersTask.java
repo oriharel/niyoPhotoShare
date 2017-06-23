@@ -30,7 +30,7 @@ public class GetFoldersTask extends DriveAPIsTask {
         Log.d(LOG_TAG, "actualDoInBackground started with q="+queryString);
         FileList fileList = mService.files().list()
                 .setPageSize(30)
-                .setFields("nextPageToken, files(id, kind, parents, name, appProperties)")
+                .setFields("nextPageToken, files(id, kind, parents, name, appProperties, permissions)")
                 .setQ(queryString)
                 .execute();
         List<File> files = fileList.getFiles();

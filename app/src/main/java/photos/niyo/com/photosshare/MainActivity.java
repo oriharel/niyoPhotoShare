@@ -17,7 +17,6 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -38,24 +37,19 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException;
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
-import com.google.api.services.drive.model.File;
-import com.google.api.services.drive.model.FileList;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
+import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
+import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
+import photos.niyo.com.photosshare.tasks.GetFoldersTask;
+import photos.niyo.com.photosshare.tasks.IsFoldersChangeTask;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
@@ -436,7 +430,76 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         builder.setPeriodic(JOB_PERIODIC_INTERVAL);
 
         mJobScheduler.schedule(builder.build());
+        syncFoldersNow();
         Log.i(LOG_TAG, "FolderSyncService JOB SCHEDULED!");
+    }
+
+    private void syncFoldersNow() {
+        Log.d(LOG_TAG, "syncFoldersNow started");
+        final ServiceCaller dbCaller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                Log.d(LOG_TAG, "received success from InsertNewFoldersTask");
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+                Log.e(LOG_TAG, "received error from InsertNewFoldersTask "+description);
+            }
+        };
+
+        ServiceCaller caller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+
+                final DriveAPIsTask.DriveApiResult result = (DriveAPIsTask.DriveApiResult)data;
+
+                Log.d(LOG_TAG, "received success from GetFoldersTask with "
+                        +result.getFolders().length+" shared folders");
+
+                ServiceCaller needToUpdateCaller = new ServiceCaller() {
+                    @Override
+                    public void success(Object data) {
+                        Boolean isNeedToUpdate = (Boolean)data;
+                        if (isNeedToUpdate) {
+                            //TODO should be on a different thread
+                            getApplicationContext().getContentResolver().delete(Constants.FOLDERS_URI, null, null);
+
+                            if (result.getFolders().length > 0) {
+                                DeleteFolderFromDbTask.InsertFoldersToDbTask task = new DeleteFolderFromDbTask.InsertFoldersToDbTask(getApplicationContext(),
+                                        dbCaller);
+                                task.execute(result.getFolders());
+                            }
+                        }
+                        else {
+                            Log.d(LOG_TAG, "all is synced");
+                        }
+                    }
+
+                    @Override
+                    public void failure(Object data, String description) {
+                        Log.e(LOG_TAG, "Error from need to update query");
+                    }
+                };
+
+                checkIfNeedToUpdate(result.getFolders(), needToUpdateCaller);
+
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+                Log.e(LOG_TAG, "received error from GetFoldersTask with: "+description);
+            }
+        };
+
+
+        GetFoldersTask task = new GetFoldersTask(getApplicationContext(), caller);
+        task.execute();
+    }
+
+    private void checkIfNeedToUpdate(Folder[] folders, ServiceCaller caller) {
+        IsFoldersChangeTask task = new IsFoldersChangeTask(getApplicationContext(), caller);
+        task.execute(folders);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)

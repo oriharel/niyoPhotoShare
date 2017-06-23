@@ -4,9 +4,10 @@ import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.util.Log;
 
-import photos.niyo.com.photosshare.db.InsertNewFoldersTask;
+import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
 import photos.niyo.com.photosshare.tasks.GetFoldersTask;
+import photos.niyo.com.photosshare.tasks.InsertFoldersToDbTask;
 import photos.niyo.com.photosshare.tasks.IsFoldersChangeTask;
 
 /**
@@ -17,6 +18,7 @@ public class FolderSyncService extends JobService {
     public static final String LOG_TAG = FolderSyncService.class.getSimpleName();
     @Override
     public boolean onStartJob(JobParameters params) {
+        Log.d(LOG_TAG, "onStartJob started");
 
         final ServiceCaller dbCaller = new ServiceCaller() {
             @Override
@@ -45,10 +47,11 @@ public class FolderSyncService extends JobService {
                         Boolean isNeedToUpdate = (Boolean)data;
                         if (isNeedToUpdate) {
                             //TODO should be on a different thread
-                            getApplicationContext().getContentResolver().delete(Constants.FOLDERS_URI, null, null);
+                            getApplicationContext().getContentResolver()
+                                    .delete(Constants.FOLDERS_URI, null, null);
 
                             if (result.getFolders().length > 0) {
-                                InsertNewFoldersTask task = new InsertNewFoldersTask(getApplicationContext(),
+                                InsertFoldersToDbTask task = new InsertFoldersToDbTask(getApplicationContext(),
                                         dbCaller);
                                 task.execute(result.getFolders());
                             }
