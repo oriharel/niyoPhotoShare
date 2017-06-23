@@ -2,6 +2,7 @@ package photos.niyo.com.photosshare;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import java.util.Date;
 
@@ -10,6 +11,7 @@ import java.util.Date;
  */
 
 public class Folder {
+    public static final String LOG_TAG = Folder.class.getSimpleName();
     public static final String APP_ID = "app_id";
 
     public String getName() {
@@ -64,6 +66,7 @@ public class Folder {
     }
 
     public void setSharedWith(String mSharedWith) {
+        Log.d(LOG_TAG, "setSharedWith for folder: "+mName+" ["+mSharedWith+"]");
         this.mSharedWith = mSharedWith;
     }
 }

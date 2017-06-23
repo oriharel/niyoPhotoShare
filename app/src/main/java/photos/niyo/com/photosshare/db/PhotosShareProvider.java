@@ -194,6 +194,7 @@ public class PhotosShareProvider extends ContentProvider {
                 Log.d(LOG_TAG, "querying folders table");
                 qb.setTables(PhotosShareDbHelper.FOLDERS_TABLE_NAME);
                 orderBy = PhotosShareColumns.CREATE_AT;
+                qb.setProjectionMap(sFoldersProjectionMap);
                 break;
             }
 
@@ -203,6 +204,7 @@ public class PhotosShareProvider extends ContentProvider {
                 Log.d(LOG_TAG, "querying users table");
                 qb.setTables(PhotosShareDbHelper.USERS_TABLE_NAME);
                 orderBy = UsersColumns.DISPLAY_NAME;
+                qb.setProjectionMap(sUsersProjectionMap);
                 break;
             }
 
@@ -211,7 +213,7 @@ public class PhotosShareProvider extends ContentProvider {
                 throw new IllegalArgumentException("Unknown URI " + uri);
         }
 
-        qb.setProjectionMap(sFoldersProjectionMap);
+
 
         Log.d(LOG_TAG, "going to query with selection "+selection);
         Log.d(LOG_TAG, "projection is "+ AndroidUtil.getArrayAsString(projection));

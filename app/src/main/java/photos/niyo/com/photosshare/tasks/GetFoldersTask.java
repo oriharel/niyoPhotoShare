@@ -1,17 +1,21 @@
 package photos.niyo.com.photosshare.tasks;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.api.client.util.StringUtils;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
+import com.google.api.services.drive.model.Permission;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import photos.niyo.com.photosshare.Folder;
 import photos.niyo.com.photosshare.ServiceCaller;
+import photos.niyo.com.photosshare.db.User;
 
 /**
  * Created by oriharel on 19/06/2017.
@@ -52,10 +56,53 @@ public class GetFoldersTask extends DriveAPIsTask {
                     file.getName(), endDateStr));
             String createAtStr = file.getAppProperties().get("created_at");
             folder.setCreatedAt(Long.valueOf(createAtStr));
+            folder.setSharedWith(getWriters(file));
             folders[i] = folder;
         }
         result.setFolders(folders);
         result.setResult(true);
         return result;
+    }
+
+    private String getWriters(File file) {
+        Log.d(LOG_TAG, "getWriters started");
+        List<Permission> permissions = file.getPermissions();
+        List<String> result = new ArrayList<>();
+        List<User> writers = new ArrayList<>();
+
+        Log.d(LOG_TAG, "received "+permissions.size()+" permissions");
+
+        for (Permission permission :
+                permissions) {
+            String emailAddress = permission.getEmailAddress();
+            Log.d(LOG_TAG, "permission is for "+emailAddress);
+            String displayName = permission.getDisplayName();
+            String photoLink = permission.getPhotoLink();
+            String userId = permission.getId();
+            result.add(emailAddress);
+            User user = new User();
+            user.setId(userId);
+            user.setEmailAddress(emailAddress);
+            user.setDisplayName(displayName);
+            user.setPhotoLink(photoLink);
+            writers.add(user);
+        }
+
+        ServiceCaller insertUsersCaller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                Log.d(LOG_TAG, "writers were updated to db");
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+                Log.e(LOG_TAG, "error in update db with writers");
+            }
+        };
+
+        InsertUsersToDbTask task = new InsertUsersToDbTask(mContext, insertUsersCaller);
+        task.execute(writers.toArray(new User[writers.size()]));
+        Log.d(LOG_TAG, "writers result is "+result);
+        return TextUtils.join(",", result);
     }
 }

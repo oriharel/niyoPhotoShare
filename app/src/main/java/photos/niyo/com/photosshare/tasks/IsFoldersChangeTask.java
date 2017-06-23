@@ -56,7 +56,7 @@ public class IsFoldersChangeTask extends AsyncTask<Folder, Void, Boolean> {
             }
         }
 
-        return false;
+        return true;
     }
 
     @Override

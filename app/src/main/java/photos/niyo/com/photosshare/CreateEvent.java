@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.MultiAutoCompleteTextView;
@@ -41,6 +42,7 @@ import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.Permission;
+import com.robertlevonyan.views.chip.Chip;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,8 +54,9 @@ import java.util.Map;
 
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
 import photos.niyo.com.photosshare.db.User;
-import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.GetFolderFromDbTask;
+import photos.niyo.com.photosshare.tasks.GetUsersFromDbTask;
+import photos.niyo.com.photosshare.tasks.InsertFoldersToDbTask;
 import photos.niyo.com.photosshare.tasks.InsertUsersToDbTask;
 
 import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
@@ -63,6 +66,7 @@ import static photos.niyo.com.photosshare.MainActivity.REQUEST_GOOGLE_PLAY_SERVI
 public class CreateEvent extends AppCompatActivity  {
 
     public static final String LOG_TAG = CreateEvent.class.getSimpleName();
+    private Folder mEditedFolder;
 
     String mFolderId = null;
 
@@ -91,14 +95,6 @@ public class CreateEvent extends AppCompatActivity  {
             }
         });
 
-        final Button permButton = (Button)findViewById(R.id.permBtn);
-        permButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                createPermission(permButton);
-            }
-        });
-
         String folderId = getIntent().getStringExtra(PhotosShareColumns.FOLDER_ID);
 
         ServiceCaller caller = new ServiceCaller() {
@@ -119,20 +115,76 @@ public class CreateEvent extends AppCompatActivity  {
         task.execute(folderId);
         initInviteesEditTextPermission();
 
+        Intent intent = getIntent();
+        String editedFolderId = intent.getStringExtra(PhotosShareColumns.FOLDER_ID);
+
+        ServiceCaller getFolderCaller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                mEditedFolder = (Folder)data;
+                fetchWritersFromDb();
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+
+            }
+        };
+
+        if (editedFolderId != null){
+            GetFolderFromDbTask getFolderTask = new GetFolderFromDbTask(this, getFolderCaller);
+            getFolderTask.execute(editedFolderId);
+        }
 
     }
 
+    private void fetchWritersFromDb() {
+        ServiceCaller usersCaller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                User[] folderWriters = (User[])data;
+                initWritersContainer(folderWriters);
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+
+            }
+        };
+
+        GetUsersFromDbTask task = new GetUsersFromDbTask(this, usersCaller);
+
+        if (mEditedFolder.getSharedWith() != null) {
+            task.execute(mEditedFolder.getSharedWith().split(","));
+        }
+        else {
+            Log.d(LOG_TAG, "folder "+mEditedFolder.getName()+" has no shared with writers");
+        }
+
+    }
+
+    private void initWritersContainer(User[] folderWriters) {
+        Log.d(LOG_TAG, "initWritersContainer started with "+folderWriters.length+" writers");
+        ViewGroup writersGroup = (ViewGroup)findViewById(R.id.writersContainer);
+        for (User user :
+                folderWriters) {
+            Chip chip = new Chip(this);
+            chip.setChipText(user.getDisplayName());
+            writersGroup.addView(chip);
+        }
+    }
+
     private void initInviteesEditText() {
-        final RecipientEditTextView phoneRetv =
+        final RecipientEditTextView writersEditText =
                 (RecipientEditTextView) findViewById(R.id.inviteEditBox);
-        phoneRetv.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+        writersEditText.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
         BaseRecipientAdapter baseRecipientAdapter = new BaseRecipientAdapter(BaseRecipientAdapter.QUERY_TYPE_EMAIL, this);
 
         // Queries for all phone numbers. Includes phone numbers marked as "mobile" and "others".
         // If set as true, baseRecipientAdapter will query only for phone numbers marked as "mobile".
         baseRecipientAdapter.setShowMobileOnly(false);
 
-        phoneRetv.setAdapter(baseRecipientAdapter);
+        writersEditText.setAdapter(baseRecipientAdapter);
     }
 
     private void initInviteesEditTextPermission() {
@@ -175,7 +227,9 @@ public class CreateEvent extends AppCompatActivity  {
 
     }
 
-    private void createPermission(final View v) {
+    private void createPermission() {
+        Log.d(LOG_TAG, "createPermission started");
+        final View v = findViewById(R.id.createEventContainer);
         if (mFolderId != null) {
             String[] SCOPES = { DriveScopes.DRIVE };
 
@@ -580,6 +634,7 @@ public class CreateEvent extends AppCompatActivity  {
             @Override
             public void success(Object data) {
                 Log.d(LOG_TAG, "folder "+createdFolder.getName()+" created successfully");
+                createPermission();
             }
 
             @Override
@@ -588,7 +643,7 @@ public class CreateEvent extends AppCompatActivity  {
             }
         };
 
-        DeleteFolderFromDbTask.InsertFoldersToDbTask task = new DeleteFolderFromDbTask.InsertFoldersToDbTask(this, caller);
+        InsertFoldersToDbTask task = new InsertFoldersToDbTask(this, caller);
         task.execute(createdFolder);
     }
 }

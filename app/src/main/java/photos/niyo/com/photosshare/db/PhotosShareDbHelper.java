@@ -27,7 +27,7 @@ public class PhotosShareDbHelper extends SQLiteOpenHelper {
                     + PhotosShareColumns.LOCATION + " Decimal(9,6));";
 
     private static final String USERS_TABLE_CREATE =
-            "create table " + FOLDERS_TABLE_NAME + " ("
+            "create table " + USERS_TABLE_NAME + " ("
                     + UsersColumns._ID + " integer primary key autoincrement, "
                     + UsersColumns.ID + " TEXT, "
                     + UsersColumns.EMAIL_ADDRESS + " TEXT, "

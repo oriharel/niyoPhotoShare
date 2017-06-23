@@ -49,6 +49,7 @@ import photos.niyo.com.photosshare.db.PhotosShareColumns;
 import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
 import photos.niyo.com.photosshare.tasks.GetFoldersTask;
+import photos.niyo.com.photosshare.tasks.InsertFoldersToDbTask;
 import photos.niyo.com.photosshare.tasks.IsFoldersChangeTask;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -379,6 +380,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         schedulePhotosJob();
                     }
 
+                    scheduleFoldersSync();
+
                 } else {
 
                     // permission denied, boo! Disable the
@@ -466,7 +469,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                             getApplicationContext().getContentResolver().delete(Constants.FOLDERS_URI, null, null);
 
                             if (result.getFolders().length > 0) {
-                                DeleteFolderFromDbTask.InsertFoldersToDbTask task = new DeleteFolderFromDbTask.InsertFoldersToDbTask(getApplicationContext(),
+                                InsertFoldersToDbTask task = new InsertFoldersToDbTask(getApplicationContext(),
                                         dbCaller);
                                 task.execute(result.getFolders());
                             }

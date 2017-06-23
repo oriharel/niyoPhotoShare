@@ -44,6 +44,7 @@ public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
                 int colFolderNameIndex = cursor.getColumnIndex(PhotosShareColumns.FOLDER_NAME);
                 int colFolderStartDate = cursor.getColumnIndex(PhotosShareColumns.START_DATE);
                 int colFolderEndDate = cursor.getColumnIndex(PhotosShareColumns.END_DATE);
+                int colFolderSharedWithIndex = cursor.getColumnIndex(PhotosShareColumns.SHARED_WITH);
 
                 Log.d(LOG_TAG, "[GetActiveFolderTask] found folder with id: "+
                         cursor.getString(colFolderIdIndex));
@@ -51,6 +52,7 @@ public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
                 result.setName(cursor.getString(colFolderNameIndex));
                 result.setStartDate(cursor.getLong(colFolderStartDate));
                 result.setEndDate(cursor.getLong(colFolderEndDate));
+                result.setSharedWith(cursor.getString(colFolderSharedWithIndex));
             }
 
             cursor.close();
@@ -67,6 +69,6 @@ public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
 
     protected String getSelection(String... params) {
         String folderId = params[0];
-        return PhotosShareColumns.FOLDER_ID+"="+folderId;
+        return PhotosShareColumns.FOLDER_ID+"='"+folderId+"'";
     }
 }

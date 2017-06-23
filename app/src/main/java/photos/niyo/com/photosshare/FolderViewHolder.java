@@ -28,6 +28,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
     private TextView mFolderDescription;
     private Folder mFolder;
     private TextView mDeleteAction;
+    private TextView mEditAction;
 
     public FolderViewHolder(View v) {
         super(v);
@@ -36,7 +37,9 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mFolderName = (TextView) v.findViewById(R.id.folder_event_title);
         mFolderDescription = (TextView) v.findViewById(R.id.folder_description);
         mDeleteAction = (TextView)v.findViewById(R.id.delete_folder);
+        mEditAction = (TextView)v.findViewById(R.id.edit_folder);
         mDeleteAction.setOnClickListener(this);
+        mEditAction.setOnClickListener(this);
     }
 
     //5

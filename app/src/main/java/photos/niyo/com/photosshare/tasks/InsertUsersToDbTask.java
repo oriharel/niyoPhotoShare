@@ -2,6 +2,7 @@ package photos.niyo.com.photosshare.tasks;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -37,10 +38,24 @@ public class InsertUsersToDbTask extends AsyncTask<User, Void, Boolean> {
             values.put(UsersColumns.DISPLAY_NAME, user.getDisplayName());
             values.put(UsersColumns.PHOTO_LINK, user.getPhotoLink());
 
-            mContext.getContentResolver().insert(Constants.USERS_URI, values);
+            String selection = UsersColumns.EMAIL_ADDRESS+"='"+user.getEmailAddress()+"'";
+            Log.d(LOG_TAG, "querying db selection: "+selection);
+            Cursor cursor = mContext.getContentResolver().query(Constants.USERS_URI,
+                    Constants.USERS_PROJECTION, selection, null, null);
+
+            if (cursor != null) {
+                if (!cursor.moveToFirst()) {
+                    mContext.getContentResolver().insert(Constants.USERS_URI, values);
+                }
+                else {
+                    Log.d(LOG_TAG, "user "+user.getEmailAddress()+" already exist");
+                }
+            }
+
+
         }
 
-        return null;
+        return true;
     }
 
     @Override

@@ -2,7 +2,9 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:id="@+id/createEventContainer">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/createEventToolbar"
@@ -39,6 +41,12 @@
         android:hint="@string/nameOrEmail"
         android:minHeight="58dp" />
 
+    <com.google.android.flexbox.FlexboxLayout
+        android:id="@+id/writersContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:flexWrap="wrap" />
+
     <Button
         android:id="@+id/createFolderBtn"
         android:layout_width="match_parent"
@@ -47,13 +55,5 @@
         android:layout_marginRight="@dimen/side_margin"
         android:layout_marginTop="20dp"
         android:text="Create" />
-
-    <Button
-        android:id="@+id/permBtn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/side_margin"
-        android:layout_marginRight="@dimen/side_margin"
-        android:text="Permission" />
 
 </LinearLayout>
