@@ -33,6 +33,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -41,9 +42,13 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
 import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
@@ -75,6 +80,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
     public static final String PREF_ACCOUNT_NAME = "accountName";
+    public static final Integer PHOTOS_JOB_ID = 1;
+    public static final Integer FOLDERS_JOB_ID = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,17 +123,53 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         };
         registerForChanges();
 
+        mJobScheduler = (JobScheduler)
+                getSystemService( Context.JOB_SCHEDULER_SERVICE );
+        mJobScheduler.cancelAll();
+
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
                 getApplicationContext(), Arrays.asList(SCOPES))
                 .setBackOff(new ExponentialBackOff());
 
-        SharedPreferences pref = getApplicationContext().getSharedPreferences("app",
+        final SharedPreferences pref = getApplicationContext().getSharedPreferences("app",
                 Context.MODE_PRIVATE);
         String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
         Log.d(LOG_TAG, "accountName found is: "+accountName);
         mCredential.setSelectedAccountName(accountName);
         getResultsFromApi();
+
+        updateLastSyncViews(pref);
+
+        SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                if (key.equals(FolderSyncService.LAST_SYNC_KEY) || key.equals(PhotosContentJob.LAST_SYNC_KEY)) {
+                    updateLastSyncViews(pref);
+                }
+            }
+        };
+
+        pref.registerOnSharedPreferenceChangeListener(listener);
+
+    }
+
+    private void updateLastSyncViews(SharedPreferences pref) {
+        Long lastSyncFolders = pref.getLong(FolderSyncService.LAST_SYNC_KEY, -1);
+        Long lastSyncPhotos = pref.getLong(PhotosContentJob.LAST_SYNC_KEY, -1);
+
+        TextView lastSyncFoldersView = (TextView)findViewById(R.id.lastSyncFolders);
+        TextView lastSyncPhotosView = (TextView)findViewById(R.id.lastSyncPhotos);
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(lastSyncFolders);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
+        SimpleDateFormat.getDateInstance();
+
+        lastSyncFoldersView.setText("Folders last sync: "+sdf.format(cal.getTime()));
+        cal.setTimeInMillis(lastSyncPhotos);
+        lastSyncPhotosView.setText("Photos last sync: "+sdf.format(cal.getTime()));
     }
 
     private void getResultsFromApi() {
@@ -373,12 +416,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        schedulePhotosJobNougat();
-                    }
-                    else {
+//                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+//                        schedulePhotosJobNougat();
+//                    }
+//                    else {
                         schedulePhotosJob();
-                    }
+//                    }
 
                     scheduleFoldersSync();
 
@@ -411,12 +454,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
         else {
             Log.d(LOG_TAG, "permission to photos read already granted");
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                schedulePhotosJobNougat();
-            }
-            else {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+//                schedulePhotosJobNougat();
+//            }
+//            else {
                 schedulePhotosJob();
-            }
+//            }
 
             scheduleFoldersSync();
         }
@@ -427,7 +470,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mJobScheduler = (JobScheduler)
                 getSystemService( Context.JOB_SCHEDULER_SERVICE );
 
-        JobInfo.Builder builder = new JobInfo.Builder( 1,
+        JobInfo.Builder builder = new JobInfo.Builder( FOLDERS_JOB_ID,
                 new ComponentName( getPackageName(),FolderSyncService.class.getName() ) );
 
         builder.setPeriodic(JOB_PERIODIC_INTERVAL);
@@ -505,31 +548,31 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         task.execute(folders);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    private void schedulePhotosJobNougat() {
-        Log.d(LOG_TAG, "schedulePhotosJobNougat started");
-        mJobScheduler = (JobScheduler)
-                getSystemService( Context.JOB_SCHEDULER_SERVICE );
-
-        JobInfo.Builder builder = new JobInfo.Builder( 1,
-                new ComponentName( getPackageName(),PhotosContentJob.class.getName() ) );
-        builder.addTriggerContentUri(new JobInfo.TriggerContentUri(
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS));
-        // Also look for general reports of changes in the overall provider.
-        builder.addTriggerContentUri(new JobInfo.TriggerContentUri(MEDIA_URI, 0));
-
-        mJobScheduler.schedule(builder.build());
-        Log.i(LOG_TAG, "JOB SCHEDULED!");
-    }
+//    @RequiresApi(api = Build.VERSION_CODES.N)
+//    private void schedulePhotosJobNougat() {
+//        Log.d(LOG_TAG, "schedulePhotosJobNougat started");
+//        mJobScheduler = (JobScheduler)
+//                getSystemService( Context.JOB_SCHEDULER_SERVICE );
+//
+//        JobInfo.Builder builder = new JobInfo.Builder( PHOTOS_JOB_ID,
+//                new ComponentName( getPackageName(),PhotosContentJob.class.getName() ) );
+//        builder.addTriggerContentUri(new JobInfo.TriggerContentUri(
+//        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+//        JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS));
+//        // Also look for general reports of changes in the overall provider.
+//        builder.addTriggerContentUri(new JobInfo.TriggerContentUri(MEDIA_URI, 0));
+//
+//        mJobScheduler.schedule(builder.build());
+//        Log.i(LOG_TAG, "JOB SCHEDULED!");
+//    }
 
     private void schedulePhotosJob() {
         Log.d(LOG_TAG, "schedulePhotosJob started");
         mJobScheduler = (JobScheduler)
                 getSystemService( Context.JOB_SCHEDULER_SERVICE );
 
-        JobInfo.Builder builder = new JobInfo.Builder( 1,
-                new ComponentName( getPackageName(),PhotosContentJob.class.getName() ) );
+        JobInfo.Builder builder = new JobInfo.Builder( PHOTOS_JOB_ID,
+                new ComponentName(getPackageName(),PhotosContentJob.class.getName() ) );
 
         builder.setPeriodic(JOB_PERIODIC_INTERVAL);
 
@@ -605,6 +648,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 folder.setCreatedAt(Long.valueOf(createdAt));
                 folder.setStartDate(cursor.getLong(colStartDateIndex));
                 folder.setEndDate(cursor.getLong(colEndDateIndex));
+                Log.d(LOG_TAG, "endDate for folder is: "+folder.getEndDate());
                 folder.setId(folderId);
                 mFoldersList.add(folder);
                 cursor.moveToNext();

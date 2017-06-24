@@ -2,7 +2,10 @@ package photos.niyo.com.photosshare;
 
 import android.app.job.JobParameters;
 import android.app.job.JobService;
+import android.content.SharedPreferences;
 import android.util.Log;
+
+import java.util.Calendar;
 
 import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
@@ -16,19 +19,23 @@ import photos.niyo.com.photosshare.tasks.IsFoldersChangeTask;
 
 public class FolderSyncService extends JobService {
     public static final String LOG_TAG = FolderSyncService.class.getSimpleName();
+    public static final String LAST_SYNC_KEY = "last_sync_folders";
+
     @Override
-    public boolean onStartJob(JobParameters params) {
+    public boolean onStartJob(final JobParameters params) {
         Log.d(LOG_TAG, "onStartJob started");
 
         final ServiceCaller dbCaller = new ServiceCaller() {
             @Override
             public void success(Object data) {
                 Log.d(LOG_TAG, "received success from InsertNewFoldersTask");
+                jobFinished(params, false);
             }
 
             @Override
             public void failure(Object data, String description) {
                 Log.e(LOG_TAG, "received error from InsertNewFoldersTask "+description);
+                jobFinished(params, true);
             }
         };
 
@@ -46,6 +53,7 @@ public class FolderSyncService extends JobService {
                     public void success(Object data) {
                         Boolean isNeedToUpdate = (Boolean)data;
                         if (isNeedToUpdate) {
+                            getApplicationContext().getContentResolver().delete(Constants.FOLDERS_URI, null, null);
                             //TODO should be on a different thread
                             getApplicationContext().getContentResolver()
                                     .delete(Constants.FOLDERS_URI, null, null);
@@ -55,6 +63,10 @@ public class FolderSyncService extends JobService {
                                         dbCaller);
                                 task.execute(result.getFolders());
                             }
+                            else {
+                                jobFinished(params, false);
+                            }
+
                         }
                         else {
                             Log.d(LOG_TAG, "all is synced");
@@ -64,6 +76,7 @@ public class FolderSyncService extends JobService {
                     @Override
                     public void failure(Object data, String description) {
                         Log.e(LOG_TAG, "Error from need to update query");
+                        jobFinished(params, true);
                     }
                 };
 
@@ -74,12 +87,18 @@ public class FolderSyncService extends JobService {
             @Override
             public void failure(Object data, String description) {
                 Log.e(LOG_TAG, "received error from GetFoldersTask with: "+description);
+                jobFinished(params, true);
             }
         };
 
 
         GetFoldersTask task = new GetFoldersTask(getApplicationContext(), caller);
         task.execute();
+
+        SharedPreferences prefs = getSharedPreferences("app", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong(LAST_SYNC_KEY, Calendar.getInstance().getTimeInMillis());
+        editor.apply();
         return false;
     }
 

@@ -29,6 +29,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
     private Folder mFolder;
     private TextView mDeleteAction;
     private TextView mEditAction;
+    private TextView mEndDateView;
 
     public FolderViewHolder(View v) {
         super(v);
@@ -36,6 +37,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mFolderImage = (ImageView) v.findViewById(R.id.folder_event_image);
         mFolderName = (TextView) v.findViewById(R.id.folder_event_title);
         mFolderDescription = (TextView) v.findViewById(R.id.folder_description);
+        mEndDateView = (TextView) v.findViewById(R.id.endDateView);
         mDeleteAction = (TextView)v.findViewById(R.id.delete_folder);
         mEditAction = (TextView)v.findViewById(R.id.edit_folder);
         mDeleteAction.setOnClickListener(this);
@@ -91,6 +93,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mFolder = folder;
         mFolderName.setText(folder.getName());
         Calendar cal = Calendar.getInstance();
+        Log.d(LOG_TAG, "setting start date: "+folder.getStartDate());
         cal.setTimeInMillis(folder.getStartDate());
 
         DateFormat sdf = DateFormat.getDateInstance();
@@ -98,5 +101,8 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         SimpleDateFormat.getDateInstance();
 
         mFolderDescription.setText("Start: "+sdf.format(cal.getTime()));
+        Log.d(LOG_TAG, "setting end date: "+folder.getEndDate());
+        cal.setTimeInMillis(folder.getEndDate());
+        mEndDateView.setText("End: "+sdf.format(cal.getTime()));
     }
 }

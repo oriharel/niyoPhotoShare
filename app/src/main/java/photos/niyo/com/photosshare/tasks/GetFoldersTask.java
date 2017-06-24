@@ -52,8 +52,9 @@ public class GetFoldersTask extends DriveAPIsTask {
                     file.getName(), startDateStr));
             folder.setStartDate(Long.valueOf(startDateStr));
             String endDateStr = file.getAppProperties().get("end_date");
-            Log.d(LOG_TAG, String.format("folder %s has start_date of %s",
+            Log.d(LOG_TAG, String.format("folder %s has end_date of %s",
                     file.getName(), endDateStr));
+            folder.setEndDate(Long.valueOf(endDateStr));
             String createAtStr = file.getAppProperties().get("created_at");
             folder.setCreatedAt(Long.valueOf(createAtStr));
             folder.setSharedWith(getWriters(file));
