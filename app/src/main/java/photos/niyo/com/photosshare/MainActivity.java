@@ -109,7 +109,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mFoldersList = new ArrayList<>();
         mAdapter = new FoldersListAdapter(mFoldersList);
         mRecyclerView.setAdapter(mAdapter);
-        findViewById(R.id.listContainer).setVisibility(View.GONE);
+        findViewById(R.id.archivedFoldersList).setVisibility(View.GONE);
+        findViewById(R.id.archivedListLabel).setVisibility(View.GONE);
         findViewById(R.id.emptyView).setVisibility(View.GONE);
 
         mObserver = new ContentObserver(mHandler) {
@@ -619,8 +620,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String selection = PhotosShareColumns.END_DATE+"<"+Calendar.getInstance().getTimeInMillis();
         return new CursorLoader(this, Constants.FOLDERS_URI,
-                Constants.FOLDERS_PROJECTION, null, null, null);
+                Constants.FOLDERS_PROJECTION, selection, null, null);
     }
 
     @Override
@@ -629,7 +631,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mFoldersList.clear();
 
         if (cursor.moveToFirst()) {
-            findViewById(R.id.listContainer).setVisibility(View.VISIBLE);
+            findViewById(R.id.archivedFoldersList).setVisibility(View.VISIBLE);
+            findViewById(R.id.archivedListLabel).setVisibility(View.VISIBLE);
             findViewById(R.id.emptyView).setVisibility(View.GONE);
             while (!cursor.isAfterLast()) {
                 int colFolderNameIndex = cursor.getColumnIndex(PhotosShareColumns.FOLDER_NAME);
@@ -656,7 +659,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         }
         else {
-            showEmptyPage();
+//            showEmptyPage();
         }
 
         cursor.close();
