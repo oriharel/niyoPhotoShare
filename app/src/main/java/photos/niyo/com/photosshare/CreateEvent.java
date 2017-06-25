@@ -58,6 +58,7 @@ import photos.niyo.com.photosshare.tasks.GetFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.GetUsersFromDbTask;
 import photos.niyo.com.photosshare.tasks.InsertFoldersToDbTask;
 import photos.niyo.com.photosshare.tasks.InsertUsersToDbTask;
+import photos.niyo.com.photosshare.tasks.UpdateFolderInDbTask;
 
 import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
 import static photos.niyo.com.photosshare.MainActivity.REQUEST_AUTHORIZATION;
@@ -91,7 +92,7 @@ public class CreateEvent extends AppCompatActivity  {
             @Override
             public void onClick(View v) {
                 EditText eventNameET = (EditText)findViewById(R.id.eventName);
-                createEventFolder(eventNameET);
+                createOrUpdateEventFolder(eventNameET);
             }
         });
 
@@ -115,8 +116,7 @@ public class CreateEvent extends AppCompatActivity  {
         task.execute(folderId);
         initInviteesEditTextPermission();
 
-        Intent intent = getIntent();
-        String editedFolderId = intent.getStringExtra(PhotosShareColumns.FOLDER_ID);
+        String editedFolderId = getIntent().getStringExtra(PhotosShareColumns.FOLDER_ID);
 
         ServiceCaller getFolderCaller = new ServiceCaller() {
             @Override
@@ -134,6 +134,7 @@ public class CreateEvent extends AppCompatActivity  {
         if (editedFolderId != null){
             GetFolderFromDbTask getFolderTask = new GetFolderFromDbTask(this, getFolderCaller);
             getFolderTask.execute(editedFolderId);
+            createBtn.setText("Update");
         }
 
     }
@@ -382,7 +383,7 @@ public class CreateEvent extends AppCompatActivity  {
         @Override
         protected void onPostExecute(User[] result) {
             if (result != null) {
-                mCaller.success(true);
+                mCaller.success(result);
             }
             else {
                 mCaller.failure(result, "error");
@@ -450,8 +451,8 @@ public class CreateEvent extends AppCompatActivity  {
     }
 
 
-    private void createEventFolder(EditText eventNameET) {
-        Log.d(LOG_TAG, "createEventFolder started");
+    private void createOrUpdateEventFolder(EditText eventNameET) {
+        Log.d(LOG_TAG, "createOrUpdateEventFolder started");
         String[] SCOPES = { DriveScopes.DRIVE };
         GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
                 getApplicationContext(), Arrays.asList(SCOPES))
@@ -466,7 +467,13 @@ public class CreateEvent extends AppCompatActivity  {
                 @Override
                 public void success(Object data) {
                     Folder createdFolder = (Folder)data;
-                    insertNewFolderToDb(createdFolder);
+                    if (getIntent().getStringExtra(PhotosShareColumns.FOLDER_ID) != null) {
+                        updateFolderToDb(createdFolder);
+                    }
+                    else {
+                        insertNewFolderToDb(createdFolder);
+                    }
+
                 }
 
                 @Override
@@ -477,6 +484,25 @@ public class CreateEvent extends AppCompatActivity  {
 
             new MakeRequestTask(credential, caller, this).execute(folderName);
         }
+    }
+
+    private void updateFolderToDb(final Folder createdFolder) {
+        Log.d(LOG_TAG, "updateFolderToDb started");
+        ServiceCaller caller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                Log.d(LOG_TAG, "folder "+createdFolder.getName()+" created successfully");
+                createPermission();
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+
+            }
+        };
+
+        UpdateFolderInDbTask task = new UpdateFolderInDbTask(this, caller);
+        task.execute(createdFolder);
     }
 
     private class MakeRequestTask extends AsyncTask<String, Void, Folder> {
@@ -542,10 +568,18 @@ public class CreateEvent extends AppCompatActivity  {
             props.put("end_date", end.toString());
             props.put("created_at", now.toString());
             fileMetadata.setAppProperties(props);
+            File file;
+            String editedFolderId = getIntent().getStringExtra(PhotosShareColumns.FOLDER_ID);
 
-            File file = mService.files().create(fileMetadata)
-                    .setFields("id")
-                    .execute();
+            if (editedFolderId != null) {
+                file = mService.files().update(editedFolderId, fileMetadata).execute();
+            }
+            else {
+                file = mService.files().create(fileMetadata)
+                        .setFields("id")
+                        .execute();
+            }
+
             Log.d(LOG_TAG, "createFolder finished with file id: "+file.getId());
 
             mFolderId = file.getId();
@@ -575,7 +609,6 @@ public class CreateEvent extends AppCompatActivity  {
 
         @Override
         protected void onCancelled() {
-//            mProgress.hide();
             if (mLastError != null) {
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     showGooglePlayServicesAvailabilityErrorDialog(
@@ -607,7 +640,7 @@ public class CreateEvent extends AppCompatActivity  {
             case REQUEST_AUTHORIZATION:
                 if (resultCode == RESULT_OK) {
                     EditText eventNameET = (EditText)findViewById(R.id.eventName);
-                    createEventFolder(eventNameET);
+                    createOrUpdateEventFolder(eventNameET);
                 }
                 break;
         }

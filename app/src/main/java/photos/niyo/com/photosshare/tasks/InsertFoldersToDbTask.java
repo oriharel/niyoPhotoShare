@@ -47,7 +47,7 @@ public class InsertFoldersToDbTask extends AsyncTask<Folder, Void, Boolean> {
 
     @Override
     protected void onPostExecute(Boolean result) {
-        Log.d(LOG_TAG, "friends db insertion succeeded");
+        Log.d(LOG_TAG, "folders db insertion succeeded");
 
         _caller.success(result);
     }

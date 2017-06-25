@@ -236,6 +236,7 @@ public class PhotosShareProvider extends ContentProvider {
     public int update(Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
         // Opens the database object in "write" mode.
+        Log.d(LOG_TAG, "update started with selection: "+selection);
         SQLiteDatabase db = getWritableDb();
         int count;
 
@@ -273,6 +274,7 @@ public class PhotosShareProvider extends ContentProvider {
          * that the incoming URI changed. The object passes this along to the resolver framework,
          * and observers that have registered themselves for the provider are notified.
          */
+        Log.d(LOG_TAG, "in updated notifying uri: "+uri);
         getContext().getContentResolver().notifyChange(uri, null);
 
         // Returns the number of rows updated.

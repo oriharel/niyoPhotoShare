@@ -53,6 +53,7 @@ import java.util.StringTokenizer;
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
 import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
+import photos.niyo.com.photosshare.tasks.GetActiveFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.GetFoldersTask;
 import photos.niyo.com.photosshare.tasks.InsertFoldersToDbTask;
 import photos.niyo.com.photosshare.tasks.IsFoldersChangeTask;
@@ -99,7 +100,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 startActivity(intent);
             }
         });
-        mRecyclerView = (RecyclerView) findViewById(R.id.foldersList);
+
+        showActiveFolder();
+        mRecyclerView = (RecyclerView) findViewById(R.id.archivedFoldersList);
         mLinearLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
 
@@ -152,6 +155,28 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         pref.registerOnSharedPreferenceChangeListener(listener);
 
+    }
+
+    private void showActiveFolder() {
+        Log.d(LOG_TAG, "[showActiveFolder] started");
+        ServiceCaller activeCaller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                Log.d(LOG_TAG, "[showActiveFolder] success");
+                Folder activeFolder = (Folder)data;
+
+                FolderViewHolder holder = new FolderViewHolder(findViewById(R.id.folderCard));
+                holder.bindFolder(activeFolder);
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+                Log.e(LOG_TAG, "[showActiveFolder] can't find active folder");
+            }
+        };
+
+        GetActiveFolderFromDbTask task = new GetActiveFolderFromDbTask(this, activeCaller);
+        task.execute();
     }
 
     private void updateLastSyncViews(SharedPreferences pref) {
