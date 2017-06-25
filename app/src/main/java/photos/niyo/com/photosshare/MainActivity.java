@@ -141,20 +141,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         Log.d(LOG_TAG, "accountName found is: "+accountName);
         mCredential.setSelectedAccountName(accountName);
         getResultsFromApi();
-
-        updateLastSyncViews(pref);
-
-        SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
-            @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                if (key.equals(FolderSyncService.LAST_SYNC_KEY) || key.equals(PhotosContentJob.LAST_SYNC_KEY)) {
-                    updateLastSyncViews(pref);
-                }
-            }
-        };
-
-        pref.registerOnSharedPreferenceChangeListener(listener);
-
     }
 
     private void showActiveFolder() {
@@ -177,24 +163,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         GetActiveFolderFromDbTask task = new GetActiveFolderFromDbTask(this, activeCaller);
         task.execute();
-    }
-
-    private void updateLastSyncViews(SharedPreferences pref) {
-        Long lastSyncFolders = pref.getLong(FolderSyncService.LAST_SYNC_KEY, -1);
-        Long lastSyncPhotos = pref.getLong(PhotosContentJob.LAST_SYNC_KEY, -1);
-
-        TextView lastSyncFoldersView = (TextView)findViewById(R.id.lastSyncFolders);
-        TextView lastSyncPhotosView = (TextView)findViewById(R.id.lastSyncPhotos);
-
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(lastSyncFolders);
-
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
-        SimpleDateFormat.getDateInstance();
-
-        lastSyncFoldersView.setText("Folders last sync: "+sdf.format(cal.getTime()));
-        cal.setTimeInMillis(lastSyncPhotos);
-        lastSyncPhotosView.setText("Photos last sync: "+sdf.format(cal.getTime()));
     }
 
     private void getResultsFromApi() {
@@ -617,8 +585,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         final SharedPreferences pref = getApplicationContext().getSharedPreferences("app",
                 Context.MODE_PRIVATE);
-
-        updateLastSyncViews(pref);
     }
 
     @Override
@@ -643,6 +609,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
             return true;
         }
 
