@@ -589,6 +589,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         super.onResume();
         Log.d(LOG_TAG, "onResume started");
         getLoaderManager().restartLoader(0, null, this);
+
+        final SharedPreferences pref = getApplicationContext().getSharedPreferences("app",
+                Context.MODE_PRIVATE);
+
+        updateLastSyncViews(pref);
     }
 
     @Override
