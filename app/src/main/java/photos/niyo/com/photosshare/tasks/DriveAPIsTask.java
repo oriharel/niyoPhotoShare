@@ -81,6 +81,7 @@ public abstract class DriveAPIsTask extends AsyncTask<Folder, Void, DriveAPIsTas
     @Override
     protected void onCancelled() {
         Log.e(LOG_TAG, "task was cancelled");
+        mCaller.failure(mLastError, "error");
     }
 
     @Override

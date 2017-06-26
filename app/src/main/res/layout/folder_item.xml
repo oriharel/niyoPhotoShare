@@ -21,9 +21,11 @@
 
             <ImageView
                 android:id="@+id/folder_event_image"
-                android:layout_width="wrap_content"
-                android:layout_height="250dp"
-                android:contentDescription="@string/preview_description" />
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/preview_description"
+                android:scaleType="centerCrop"
+                app:srcCompat="@mipmap/pic5" />
 
             <TextView
                 android:id="@+id/folder_event_title"

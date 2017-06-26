@@ -1,6 +1,7 @@
 package photos.niyo.com.photosshare;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -42,6 +43,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mEditAction = (TextView)v.findViewById(R.id.edit_folder);
         mDeleteAction.setOnClickListener(this);
         mEditAction.setOnClickListener(this);
+        v.setOnClickListener(this);
     }
 
     //5
@@ -84,6 +86,13 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         else if (v.getId() == R.id.edit_folder) {
             Intent intent = new Intent(v.getContext(), CreateEvent.class);
             intent.putExtra(PhotosShareColumns.FOLDER_ID, mFolder.getId());
+            v.getContext().startActivity(intent);
+        }
+        else {
+            String url = "https://drive.google.com/drive/u/0/folders/";
+            url += mFolder.getId();
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(url));
             v.getContext().startActivity(intent);
         }
     }

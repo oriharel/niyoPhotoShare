@@ -160,8 +160,10 @@ public class PhotosContentJob extends JobService{
             }
         };
 
+        String[] photoNamesArray = new String[photoNames.size()];
+        photoNamesArray = photoNames.toArray(photoNamesArray);
         if (photoNames.size() > 0) {
-            new UploadToGoogleDriveTask(mCredential, caller).execute(photoNames.get(0), folderId);
+            new UploadToGoogleDriveTask(mCredential, caller, folderId).execute(photoNamesArray);
         }
         else {
             jobFinished(params, false);
@@ -172,8 +174,9 @@ public class PhotosContentJob extends JobService{
         private com.google.api.services.drive.Drive mService = null;
         private Exception mLastError = null;
         private ServiceCaller _caller;
+        private String mFolderId;
 
-        UploadToGoogleDriveTask(GoogleAccountCredential credential, ServiceCaller caller) {
+        UploadToGoogleDriveTask(GoogleAccountCredential credential, ServiceCaller caller, String folderId) {
             HttpTransport transport = AndroidHttp.newCompatibleTransport();
             JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
             mService = new com.google.api.services.drive.Drive.Builder(
@@ -181,6 +184,7 @@ public class PhotosContentJob extends JobService{
                     .setApplicationName("Drive API Android Quickstart")
                     .build();
             _caller = caller;
+            mFolderId = folderId;
         }
 
         /**
@@ -190,10 +194,9 @@ public class PhotosContentJob extends JobService{
          */
         @Override
         protected Boolean doInBackground(String... params) {
-            Log.d(LOG_TAG, "[UploadToGoogleDriveTask] started with fileName: "+
-                    params[0].toString()+" folder id: "+params[1].toString());
+            Log.d(LOG_TAG, "[UploadToGoogleDriveTask] started with folder id: "+mFolderId);
             try {
-                return uploadToDrive(params[0], params[1]);
+                return uploadToDrive(params);
             } catch (Exception e) {
                 mLastError = e;
                 Log.e(LOG_TAG, "[UploadToGoogleDriveTask] ERROR!! ", e);
@@ -209,25 +212,31 @@ public class PhotosContentJob extends JobService{
          * found.
          * @throws IOException
          */
-        private Boolean uploadToDrive(String fileName, String folderId) throws IOException {
+        private Boolean uploadToDrive(String[] fileNames) throws IOException {
             // Get a list of up to 10 files.
             Log.d(LOG_TAG, "uploadToDrive started");
-            Log.d(LOG_TAG, "uploading "+fileName+" to google drive");
             Boolean result = false;
-            File fileMetadata = new File();
-            fileMetadata.setName(fileName);
-            fileMetadata.setParents(Collections.singletonList(folderId));
-            java.io.File filePath = new java.io.File(fileName);
-            FileContent mediaContent = new FileContent("image/jpeg", filePath);
-            File file = null;
-            try {
-                file = mService.files().create(fileMetadata, mediaContent)
-                        .setFields("id, parents")
-                        .execute();
-                result = true;
-            } catch (IOException e) {
-                Log.e(LOG_TAG, "[uploadNewPhotosToDrive] Error ", e);
+
+            for (String fileName :
+                    fileNames) {
+                Log.d(LOG_TAG, "uploading "+fileName+" to google drive");
+
+                File fileMetadata = new File();
+                fileMetadata.setName(fileName);
+                fileMetadata.setParents(Collections.singletonList(mFolderId));
+                java.io.File filePath = new java.io.File(fileName);
+                FileContent mediaContent = new FileContent("image/jpeg", filePath);
+                File file = null;
+                try {
+                    file = mService.files().create(fileMetadata, mediaContent)
+                            .setFields("id, parents")
+                            .execute();
+                    result = true;
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, "[uploadNewPhotosToDrive] Error ", e);
+                }
             }
+
             return result;
         }
 
@@ -283,20 +292,24 @@ public class PhotosContentJob extends JobService{
                 Log.e(LOG_TAG, "no permission READ_EXTERNAL_STORAGE");
             }
 
-            while (cursor != null && cursor.moveToNext()) {
-                // We only care about files in the DCIM directory.
-                String dir = cursor.getString(PROJECTION_DATA);
-                if (dir.startsWith(DCIM_DIR)) {
-                    if (!haveFiles) {
-                        haveFiles = true;
-                        sb.append("New photos:\n");
+            if (cursor != null && cursor.moveToFirst()) {
+                while (!cursor.isAfterLast()) {
+                    // We only care about files in the DCIM directory.
+                    String dir = cursor.getString(PROJECTION_DATA);
+                    if (dir.startsWith(DCIM_DIR)) {
+                        if (!haveFiles) {
+                            haveFiles = true;
+                            sb.append("New photos:\n");
+                        }
+                        sb.append(cursor.getInt(PROJECTION_ID));
+                        sb.append(": ");
+                        sb.append(dir);
+                        result.add(dir);
+                        sb.append("\n");
                     }
-                    sb.append(cursor.getInt(PROJECTION_ID));
-                    sb.append(": ");
-                    sb.append(dir);
-                    result.add(dir);
-                    sb.append("\n");
+                    cursor.moveToNext();
                 }
+
             }
         } catch (SecurityException e) {
             Log.e(LOG_TAG, "Error: no access to media!", e);

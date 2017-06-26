@@ -39,6 +39,7 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
 
@@ -64,8 +65,8 @@ import static photos.niyo.com.photosshare.PhotosContentJob.MEDIA_URI;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     public static final String LOG_TAG = MainActivity.class.getSimpleName();
-//    private static final long JOB_PERIODIC_INTERVAL = 15 * 60 * 1000;
-    private static final long JOB_PERIODIC_INTERVAL = 30 * 1000;
+    private static final long JOB_PERIODIC_INTERVAL = 15 * 60 * 1000;
+//    private static final long JOB_PERIODIC_INTERVAL = 30 * 1000;
 
     private FoldersListAdapter mAdapter;
     private List<Folder> mFoldersList;
@@ -111,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mRecyclerView.setAdapter(mAdapter);
         findViewById(R.id.archivedFoldersList).setVisibility(View.GONE);
         findViewById(R.id.archivedListLabel).setVisibility(View.GONE);
+        findViewById(R.id.folderCard).setVisibility(View.GONE);
         findViewById(R.id.emptyView).setVisibility(View.GONE);
 
         mObserver = new ContentObserver(mHandler) {
@@ -151,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public void success(Object data) {
                 Log.d(LOG_TAG, "[showActiveFolder] success");
                 Folder activeFolder = (Folder)data;
-
+                findViewById(R.id.folderCard).setVisibility(View.VISIBLE);
                 FolderViewHolder holder = new FolderViewHolder(findViewById(R.id.folderCard));
                 holder.bindFolder(activeFolder);
             }
@@ -529,6 +531,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             @Override
             public void failure(Object data, String description) {
                 Log.e(LOG_TAG, "received error from GetFoldersTask with: "+description);
+
+                if (data instanceof UserRecoverableAuthIOException) {
+                    UserRecoverableAuthIOException exception = (UserRecoverableAuthIOException)data;
+                    startActivityForResult(
+                            exception.getIntent(),
+                            MainActivity.REQUEST_AUTHORIZATION);
+                }
             }
         };
 
