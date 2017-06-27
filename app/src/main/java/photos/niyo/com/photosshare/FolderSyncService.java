@@ -99,7 +99,7 @@ public class FolderSyncService extends JobService {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putLong(LAST_SYNC_KEY, Calendar.getInstance().getTimeInMillis());
         editor.apply();
-        return false;
+        return true;
     }
 
     private void checkIfNeedToUpdate(Folder[] folders, ServiceCaller caller) {

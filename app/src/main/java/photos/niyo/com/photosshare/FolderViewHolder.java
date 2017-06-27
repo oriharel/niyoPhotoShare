@@ -1,14 +1,19 @@
 package photos.niyo.com.photosshare;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -17,6 +22,7 @@ import photos.niyo.com.photosshare.db.PhotosShareColumns;
 import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.DeleteFolderTask;
 import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
+import photos.niyo.com.photosshare.tasks.GetActiveFolderFromDbTask;
 
 /**
  * Created by oriharel on 04/06/2017.
@@ -97,7 +103,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         }
     }
 
-    public void bindFolder(Folder folder) {
+    public void bindFolder(final Folder folder) {
         Log.d(LOG_TAG, "bindFolder started");
         mFolder = folder;
         mFolderName.setText(folder.getName());
@@ -113,5 +119,26 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         Log.d(LOG_TAG, "setting end date: "+folder.getEndDate());
         cal.setTimeInMillis(folder.getEndDate());
         mEndDateView.setText("End: "+sdf.format(cal.getTime()));
+        String filePath = mFolderImage.getContext().getFilesDir()+"/"+
+                DownloadFileTask.LATEST_FILE_NAME;
+
+        Log.d(LOG_TAG, "Trying to load file: ("+filePath+")");
+        try {
+            FileInputStream fileIn = mFolderImage.getContext().
+                    openFileInput(DownloadFileTask.LATEST_FILE_NAME);
+            Bitmap previewImageBM = BitmapFactory.decodeStream(fileIn);
+            if (previewImageBM != null) {
+                Log.d(LOG_TAG, "success loading bitmap file preview");
+                mFolderImage.setImageBitmap(previewImageBM);
+            }
+            else {
+                Log.d(LOG_TAG, "fail to load file preview bitmap ("+filePath+")");
+            }
+        } catch (FileNotFoundException e) {
+            Log.e(LOG_TAG, "can't find file "+DownloadFileTask.LATEST_FILE_NAME, e);
+        }
+
+
+
     }
 }

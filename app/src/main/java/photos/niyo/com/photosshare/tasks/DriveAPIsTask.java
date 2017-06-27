@@ -12,6 +12,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.drive.model.FileList;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,7 +27,7 @@ import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
  */
 
 public abstract class DriveAPIsTask extends AsyncTask<Folder, Void, DriveAPIsTask.DriveApiResult> {
-    public static final String LOG_TAG = DriveAPIsTask.class.getSimpleName();
+    private static final String LOG_TAG = DriveAPIsTask.class.getSimpleName();
     protected com.google.api.services.drive.Drive mService = null;
     private ServiceCaller mCaller;
     protected Context mContext;
@@ -96,9 +97,10 @@ public abstract class DriveAPIsTask extends AsyncTask<Folder, Void, DriveAPIsTas
 
     public class DriveApiResult {
         private Folder[] mFolders;
-        private Boolean mResult;
+        private Boolean mResult = false;
         private String message;
         private Exception exception;
+        private FileList mFileList;
 
         public Folder[] getFolders() {
             return mFolders;
@@ -122,6 +124,14 @@ public abstract class DriveAPIsTask extends AsyncTask<Folder, Void, DriveAPIsTas
 
         public void setException(Exception exception) {
             this.exception = exception;
+        }
+
+        public FileList getFileList() {
+            return mFileList;
+        }
+
+        public void setFileList(FileList mFileList) {
+            this.mFileList = mFileList;
         }
     }
 }

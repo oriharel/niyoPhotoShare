@@ -29,6 +29,7 @@ public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
 
     @Override
     protected Folder doInBackground(String... params) {
+        Log.d(LOG_TAG, "doInBackground started");
         Folder result = null;
         String selection = getSelection(params);
 
@@ -46,16 +47,22 @@ public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
                 int colFolderEndDate = cursor.getColumnIndex(PhotosShareColumns.END_DATE);
                 int colFolderSharedWithIndex = cursor.getColumnIndex(PhotosShareColumns.SHARED_WITH);
 
-                Log.d(LOG_TAG, "[GetActiveFolderTask] found folder with id: "+
-                        cursor.getString(colFolderIdIndex));
                 result.setId(cursor.getString(colFolderIdIndex));
                 result.setName(cursor.getString(colFolderNameIndex));
                 result.setStartDate(cursor.getLong(colFolderStartDate));
                 result.setEndDate(cursor.getLong(colFolderEndDate));
                 result.setSharedWith(cursor.getString(colFolderSharedWithIndex));
+
+                Log.d(LOG_TAG, "[GetActiveFolderTask] found folder: "+result);
+            }
+            else {
+                Log.e(LOG_TAG, "cursor is empty");
             }
 
             cursor.close();
+        }
+        else {
+            Log.e(LOG_TAG, "Error cursor from getFolder is null");
         }
 
         return result;
@@ -63,8 +70,19 @@ public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
 
     @Override
     protected void onPostExecute(Folder folder) {
-        if (folder != null && folder.getId() != null) mCaller.success(folder);
-        else mCaller.failure(null, "no active folder found");
+        if (folder != null && folder.getId() != null) {
+            mCaller.success(folder);
+        }
+        else {
+            Log.e(LOG_TAG, "error getting active folder");
+            if (folder == null) {
+                Log.e(LOG_TAG, "folder is null");
+            }
+            else if (folder.getId() == null) {
+                Log.e(LOG_TAG, "folder id is null");
+            }
+            mCaller.failure(null, "no active folder found");
+        }
     }
 
     protected String getSelection(String... params) {

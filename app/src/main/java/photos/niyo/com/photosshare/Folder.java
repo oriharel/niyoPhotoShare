@@ -69,4 +69,9 @@ public class Folder {
         Log.d(LOG_TAG, "setSharedWith for folder: "+mName+" ["+mSharedWith+"]");
         this.mSharedWith = mSharedWith;
     }
+
+    @Override
+    public String toString() {
+        return "Id: "+mId+" Name: "+mName+" Start Date: "+mStartDate+" End Date: "+mEndDate+" Shared With: "+mSharedWith;
+    }
 }

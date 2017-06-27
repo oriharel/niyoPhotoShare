@@ -66,7 +66,6 @@ import static photos.niyo.com.photosshare.PhotosContentJob.MEDIA_URI;
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     public static final String LOG_TAG = MainActivity.class.getSimpleName();
     private static final long JOB_PERIODIC_INTERVAL = 15 * 60 * 1000;
-//    private static final long JOB_PERIODIC_INTERVAL = 30 * 1000;
 
     private FoldersListAdapter mAdapter;
     private List<Folder> mFoldersList;
@@ -84,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     public static final String PREF_ACCOUNT_NAME = "accountName";
     public static final Integer PHOTOS_JOB_ID = 1;
     public static final Integer FOLDERS_JOB_ID = 2;
+    public static final Integer PREVIEW_IMAGE_JOB_ID = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -412,14 +412,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-//                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//                        schedulePhotosJobNougat();
-//                    }
-//                    else {
-                        schedulePhotosJob();
-//                    }
-
+                    schedulePhotosJob();
                     scheduleFoldersSync();
+                    schedulePreviewImageJob();
 
                 } else {
 
@@ -437,6 +432,36 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
+    private void schedulePreviewImageJob() {
+        Log.d(LOG_TAG, "schedulePreviewImageJob started");
+        mJobScheduler = (JobScheduler)
+                getSystemService( Context.JOB_SCHEDULER_SERVICE );
+
+        JobInfo.Builder builder = new JobInfo.Builder( PREVIEW_IMAGE_JOB_ID,
+                new ComponentName( getPackageName(),GetPreviewPhotoService.class.getName() ) );
+
+        builder.setPeriodic(JOB_PERIODIC_INTERVAL);
+
+        mJobScheduler.schedule(builder.build());
+        syncFoldersNow();
+        Log.i(LOG_TAG, "GetPreviewPhotoService JOB SCHEDULED!");
+
+        //TODO test code - to remove
+        ServiceCaller someCaller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+
+            }
+        };
+        DownloadFileTask task = new DownloadFileTask(this, someCaller, "0B5d0gWTHVKPCVklmdGF6Y1h3dm8");
+        task.execute();
+    }
+
     private void requestPermissionForPhotosRead() {
         Log.d(LOG_TAG, "requestPermissionForPhotosRead started");
         int permissionCheck = ActivityCompat.checkSelfPermission(this,
@@ -450,14 +475,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
         else {
             Log.d(LOG_TAG, "permission to photos read already granted");
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//                schedulePhotosJobNougat();
-//            }
-//            else {
-                schedulePhotosJob();
-//            }
-
+            schedulePhotosJob();
             scheduleFoldersSync();
+            schedulePreviewImageJob();
         }
     }
 
