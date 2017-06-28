@@ -25,75 +25,21 @@ public class FolderSyncService extends JobService {
     public boolean onStartJob(final JobParameters params) {
         Log.d(LOG_TAG, "onStartJob started");
 
-        final ServiceCaller dbCaller = new ServiceCaller() {
+        ServiceCaller caller = new ServiceCaller() {
             @Override
             public void success(Object data) {
-                Log.d(LOG_TAG, "received success from InsertNewFoldersTask");
+                Log.d(LOG_TAG, "received success from FoldersSyncUtil");
                 jobFinished(params, false);
             }
 
             @Override
             public void failure(Object data, String description) {
-                Log.e(LOG_TAG, "received error from InsertNewFoldersTask "+description);
+                Log.e(LOG_TAG, "received failure from FoldersSyncUtil");
                 jobFinished(params, true);
             }
         };
 
-        ServiceCaller caller = new ServiceCaller() {
-            @Override
-            public void success(Object data) {
-
-                final DriveAPIsTask.DriveApiResult result = (DriveAPIsTask.DriveApiResult)data;
-
-                Log.d(LOG_TAG, "received success from GetFoldersTask with "
-                        +result.getFolders().length+" shared folders");
-
-                ServiceCaller needToUpdateCaller = new ServiceCaller() {
-                    @Override
-                    public void success(Object data) {
-                        Boolean isNeedToUpdate = (Boolean)data;
-                        if (isNeedToUpdate) {
-                            getApplicationContext().getContentResolver().delete(Constants.FOLDERS_URI, null, null);
-                            //TODO should be on a different thread
-                            getApplicationContext().getContentResolver()
-                                    .delete(Constants.FOLDERS_URI, null, null);
-
-                            if (result.getFolders().length > 0) {
-                                InsertFoldersToDbTask task = new InsertFoldersToDbTask(getApplicationContext(),
-                                        dbCaller);
-                                task.execute(result.getFolders());
-                            }
-                            else {
-                                jobFinished(params, false);
-                            }
-
-                        }
-                        else {
-                            Log.d(LOG_TAG, "all is synced");
-                        }
-                    }
-
-                    @Override
-                    public void failure(Object data, String description) {
-                        Log.e(LOG_TAG, "Error from need to update query");
-                        jobFinished(params, true);
-                    }
-                };
-
-                checkIfNeedToUpdate(result.getFolders(), needToUpdateCaller);
-
-            }
-
-            @Override
-            public void failure(Object data, String description) {
-                Log.e(LOG_TAG, "received error from GetFoldersTask with: "+description);
-                jobFinished(params, true);
-            }
-        };
-
-
-        GetFoldersTask task = new GetFoldersTask(getApplicationContext(), caller);
-        task.execute();
+        FoldersSyncUtil.updateFolders(getApplicationContext(), caller);
 
         SharedPreferences prefs = getSharedPreferences("app", MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
@@ -102,10 +48,7 @@ public class FolderSyncService extends JobService {
         return true;
     }
 
-    private void checkIfNeedToUpdate(Folder[] folders, ServiceCaller caller) {
-        IsFoldersChangeTask task = new IsFoldersChangeTask(getApplicationContext(), caller);
-        task.execute(folders);
-    }
+
 
     @Override
     public boolean onStopJob(JobParameters params) {

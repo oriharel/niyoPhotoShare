@@ -135,7 +135,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
                 Log.d(LOG_TAG, "fail to load file preview bitmap ("+filePath+")");
             }
         } catch (FileNotFoundException e) {
-            Log.e(LOG_TAG, "can't find file "+DownloadFileTask.LATEST_FILE_NAME, e);
+            Log.d(LOG_TAG, "can't find file "+DownloadFileTask.LATEST_FILE_NAME);
         }
 
 

@@ -125,6 +125,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public void onChange(boolean selfChange) {
                 Log.d(LOG_TAG, "onChange called from observer");
                 getLoaderManager().restartLoader(0, null, context);
+                showActiveFolder();
             }
         };
         registerForChanges();
@@ -181,112 +182,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
-    /**
-     * An asynchronous task that handles the Drive API call.
-     * Placing the API calls in their own task ensures the UI stays responsive.
-     */
-//    private class MakeRequestTask extends AsyncTask<Void, Void, List<String>> {
-//        private com.google.api.services.drive.Drive mService = null;
-//        private Exception mLastError = null;
-//        private Context mContext;
-//
-//        MakeRequestTask(GoogleAccountCredential credential, Context context) {
-//            HttpTransport transport = AndroidHttp.newCompatibleTransport();
-//            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
-//            mService = new com.google.api.services.drive.Drive.Builder(
-//                    transport, jsonFactory, credential)
-//                    .setApplicationName("Drive API Android Quickstart")
-//                    .build();
-//            mContext = context;
-//        }
-//
-//        /**
-//         * Background task to call Drive API.
-//         * @param params no parameters needed for this task.
-//         */
-//        @Override
-//        protected List<String> doInBackground(Void... params) {
-//            try {
-//                return getDataFromApi();
-//            } catch (Exception e) {
-//                mLastError = e;
-//                cancel(true);
-//                return null;
-//            }
-//        }
-//
-//        /**
-//         * Fetch a list of up to 10 file names and IDs.
-//         * @return List of Strings describing files, or an empty list if no files
-//         *         found.
-//         * @throws IOException
-//         */
-//        private List<String> getDataFromApi() throws IOException {
-//            // Get a list of up to 10 files.
-//            Log.d(LOG_TAG, "getDataFromApi started");
-//            List<String> fileInfo = new ArrayList<String>();
-//            FileList result = mService.files().list()
-//                    .setPageSize(30)
-//                    .setFields("nextPageToken, files(id, kind, parents, name)")
-//                    .execute();
-//            Log.d(LOG_TAG, "after mService.execute. result: "+result.getFiles().size());
-//            List<File> files = result.getFiles();
-//            if (files != null) {
-//                for (File file : files) {
-//                    fileInfo.add(String.format("%s (%s)\n",
-//                            file.getName(), file.getId()));
-//                    Log.d(LOG_TAG, "found: "+String.format("%s %s %s (%s)\n",
-//                            file.getName(), file.getKind(), file.getParents(), file.getId()));
-//
-//                }
-//            }
-//            return fileInfo;
-//        }
-//
-//
-//        @Override
-//        protected void onPreExecute() {
-////            mOutputText.setText("");
-////            mProgress.show();
-//        }
-//
-//        @Override
-//        protected void onPostExecute(List<String> output) {
-////            mProgress.hide();
-//            if (output == null || output.size() == 0) {
-//                Toast.makeText(mContext, "No results returned.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                output.add(0, "Data retrieved using the Drive API:");
-////                Toast.makeText.setText(TextUtils.join("\n", output));
-//            }
-//        }
-//
-//        @Override
-//        protected void onCancelled() {
-////            mProgress.hide();
-//            if (mLastError != null) {
-//                if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
-//                    showGooglePlayServicesAvailabilityErrorDialog(
-//                            ((GooglePlayServicesAvailabilityIOException) mLastError)
-//                                    .getConnectionStatusCode());
-//                } else if (mLastError instanceof UserRecoverableAuthIOException) {
-//                    startActivityForResult(
-//                            ((UserRecoverableAuthIOException) mLastError).getIntent(),
-//                            MainActivity.REQUEST_AUTHORIZATION);
-//                } else {
-//                    Toast.makeText(mContext, "The following error occurred:\n"
-//                            + mLastError.getMessage(), Toast.LENGTH_LONG).show();
-//                }
-//            } else {
-//                Toast.makeText(mContext, "Request cancelled.", Toast.LENGTH_SHORT).show();
-//            }
-//        }
-//    }
-
-    /**
-     * Checks whether the device currently has a network connection.
-     * @return true if the device has a network connection, false otherwise.
-     */
     private boolean isDeviceOnline() {
         ConnectivityManager connMgr =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -445,21 +340,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mJobScheduler.schedule(builder.build());
         syncFoldersNow();
         Log.i(LOG_TAG, "GetPreviewPhotoService JOB SCHEDULED!");
-
-        //TODO test code - to remove
-//        ServiceCaller someCaller = new ServiceCaller() {
-//            @Override
-//            public void success(Object data) {
-//
-//            }
-//
-//            @Override
-//            public void failure(Object data, String description) {
-//
-//            }
-//        };
-//        DownloadFileTask task = new DownloadFileTask(this, someCaller, "0B5d0gWTHVKPCVklmdGF6Y1h3dm8");
-//        task.execute();
     }
 
     private void requestPermissionForPhotosRead() {
@@ -498,72 +378,32 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private void syncFoldersNow() {
         Log.d(LOG_TAG, "syncFoldersNow started");
-        final ServiceCaller dbCaller = new ServiceCaller() {
-            @Override
-            public void success(Object data) {
-                Log.d(LOG_TAG, "received success from InsertNewFoldersTask");
-            }
-
-            @Override
-            public void failure(Object data, String description) {
-                Log.e(LOG_TAG, "received error from InsertNewFoldersTask "+description);
-            }
-        };
-
+        final Context context = this;
         ServiceCaller caller = new ServiceCaller() {
             @Override
             public void success(Object data) {
-
-                final DriveAPIsTask.DriveApiResult result = (DriveAPIsTask.DriveApiResult)data;
-
-                Log.d(LOG_TAG, "received success from GetFoldersTask with "
-                        +result.getFolders().length+" shared folders");
-
-                ServiceCaller needToUpdateCaller = new ServiceCaller() {
+                Log.d(LOG_TAG, "received success from FoldersSyncUtil");
+                ServiceCaller someCaller = new ServiceCaller() {
                     @Override
                     public void success(Object data) {
-                        Boolean isNeedToUpdate = (Boolean)data;
-                        if (isNeedToUpdate) {
-                            //TODO should be on a different thread
-                            getApplicationContext().getContentResolver().delete(Constants.FOLDERS_URI, null, null);
-
-                            if (result.getFolders().length > 0) {
-                                InsertFoldersToDbTask task = new InsertFoldersToDbTask(getApplicationContext(),
-                                        dbCaller);
-                                task.execute(result.getFolders());
-                            }
-                        }
-                        else {
-                            Log.d(LOG_TAG, "all is synced");
-                        }
+                        Log.d(LOG_TAG, "returned success from GetPreviewPhotoUtil");
                     }
 
                     @Override
                     public void failure(Object data, String description) {
-                        Log.e(LOG_TAG, "Error from need to update query");
+                        Log.e(LOG_TAG, "returned failure from GetPreviewPhotoUtil");
                     }
                 };
-
-                checkIfNeedToUpdate(result.getFolders(), needToUpdateCaller);
-
+                GetPreviewPhotoUtil.updatePhoto(context, someCaller);
             }
 
             @Override
             public void failure(Object data, String description) {
-                Log.e(LOG_TAG, "received error from GetFoldersTask with: "+description);
-
-                if (data instanceof UserRecoverableAuthIOException) {
-                    UserRecoverableAuthIOException exception = (UserRecoverableAuthIOException)data;
-                    startActivityForResult(
-                            exception.getIntent(),
-                            MainActivity.REQUEST_AUTHORIZATION);
-                }
+                Log.e(LOG_TAG, "received failure from FoldersSyncUtil");
             }
         };
 
-
-        GetFoldersTask task = new GetFoldersTask(getApplicationContext(), caller);
-        task.execute();
+        FoldersSyncUtil.updateFolders(this, caller);
     }
 
     private void checkIfNeedToUpdate(Folder[] folders, ServiceCaller caller) {
