@@ -447,19 +447,19 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         Log.i(LOG_TAG, "GetPreviewPhotoService JOB SCHEDULED!");
 
         //TODO test code - to remove
-        ServiceCaller someCaller = new ServiceCaller() {
-            @Override
-            public void success(Object data) {
-
-            }
-
-            @Override
-            public void failure(Object data, String description) {
-
-            }
-        };
-        DownloadFileTask task = new DownloadFileTask(this, someCaller, "0B5d0gWTHVKPCVklmdGF6Y1h3dm8");
-        task.execute();
+//        ServiceCaller someCaller = new ServiceCaller() {
+//            @Override
+//            public void success(Object data) {
+//
+//            }
+//
+//            @Override
+//            public void failure(Object data, String description) {
+//
+//            }
+//        };
+//        DownloadFileTask task = new DownloadFileTask(this, someCaller, "0B5d0gWTHVKPCVklmdGF6Y1h3dm8");
+//        task.execute();
     }
 
     private void requestPermissionForPhotosRead() {
