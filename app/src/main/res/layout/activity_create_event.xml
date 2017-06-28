@@ -45,7 +45,61 @@
         android:id="@+id/writersContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:flexWrap="wrap" />
+        android:layout_marginLeft="@dimen/side_margin"
+        android:layout_marginRight="@dimen/side_margin"
+        app:flexWrap="wrap" >
+
+        <!--<com.robertlevonyan.views.chip.Chip-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--app:chipText="Ori Harel"-->
+            <!--android:layout_margin="10dp"-->
+            <!--app:closable="true">-->
+
+        <!--</com.robertlevonyan.views.chip.Chip>-->
+        <!--<com.robertlevonyan.views.chip.Chip-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--app:chipText="Ori Harel"-->
+            <!--android:layout_margin="10dp"-->
+            <!--app:closable="true">-->
+
+        <!--</com.robertlevonyan.views.chip.Chip>-->
+        <!--<com.robertlevonyan.views.chip.Chip-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--app:chipText="Ori Harel"-->
+            <!--android:layout_margin="10dp"-->
+            <!--app:closable="true">-->
+
+        <!--</com.robertlevonyan.views.chip.Chip>-->
+        <!--<com.robertlevonyan.views.chip.Chip-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--app:chipText="Ori Harel"-->
+            <!--android:layout_margin="10dp"-->
+            <!--app:closable="true">-->
+
+        <!--</com.robertlevonyan.views.chip.Chip>-->
+        <!--<com.robertlevonyan.views.chip.Chip-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--app:chipText="Ori Harel"-->
+            <!--android:layout_margin="10dp"-->
+            <!--app:closable="true">-->
+
+        <!--</com.robertlevonyan.views.chip.Chip>-->
+        <!--<com.robertlevonyan.views.chip.Chip-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:layout_margin="10dp"-->
+            <!--app:chipText="Ori Harel"-->
+            <!--app:closable="true">-->
+
+        <!--</com.robertlevonyan.views.chip.Chip>-->
+    </com.google.android.flexbox.FlexboxLayout>
+
+
 
     <Button
         android:id="@+id/createFolderBtn"

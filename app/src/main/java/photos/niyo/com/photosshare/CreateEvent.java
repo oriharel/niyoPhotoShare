@@ -26,6 +26,7 @@ import android.widget.Toast;
 
 import com.android.ex.chips.BaseRecipientAdapter;
 import com.android.ex.chips.RecipientEditTextView;
+import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.batch.BatchRequest;
@@ -170,7 +171,14 @@ public class CreateEvent extends AppCompatActivity  {
         for (User user :
                 folderWriters) {
             Chip chip = new Chip(this);
+            FlexboxLayout.LayoutParams params =
+                    new FlexboxLayout.LayoutParams(FlexboxLayout.LayoutParams.WRAP_CONTENT,
+                            FlexboxLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(10, 10, 10, 10);
+            chip.setPadding(10, 10, 10, 10);
+            chip.setLayoutParams(params);
             chip.setChipText(user.getDisplayName());
+            chip.setClosable(true);
             writersGroup.addView(chip);
         }
     }
