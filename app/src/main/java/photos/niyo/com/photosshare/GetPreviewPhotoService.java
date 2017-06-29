@@ -17,10 +17,10 @@ import photos.niyo.com.photosshare.tasks.UpdateFolderInDbTask;
  * Created by oriharel on 27/06/2017.
  */
 
-public class GetPreviewPhotoService extends JobService {
+public class GetPreviewPhotoService extends AbstractJobService {
     public static final String LOG_TAG = GetPreviewPhotoService.class.getSimpleName();
     @Override
-    public boolean onStartJob(final JobParameters params) {
+    public boolean doJob(final JobParameters params) {
 
         Log.d(LOG_TAG, "onStartJob started");
         GetPreviewPhotoUtil.updatePhoto(getApplicationContext(), new ServiceCaller() {

@@ -39,7 +39,7 @@ import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
  * Created by oriharel on 06/06/2017.
  */
 
-public class PhotosContentJob extends JobService{
+public class PhotosContentJob extends AbstractJobService{
     public static final String LOG_TAG = PhotosContentJob.class.getSimpleName();
 
     // The root URI of the media provider, to monitor for generic changes to its content.
@@ -69,7 +69,7 @@ public class PhotosContentJob extends JobService{
     JobParameters mRunningParams;
 
     @Override
-    public boolean onStartJob(final JobParameters params) {
+    public boolean doJob(final JobParameters params) {
         Log.i(LOG_TAG, "JOB STARTED!");
         mRunningParams = params;
 

@@ -336,7 +336,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 new ComponentName( getPackageName(),GetPreviewPhotoService.class.getName() ) );
 
         builder.setPeriodic(JOB_PERIODIC_INTERVAL);
-
+        builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
         mJobScheduler.schedule(builder.build());
         syncFoldersNow();
         Log.i(LOG_TAG, "GetPreviewPhotoService JOB SCHEDULED!");
@@ -370,7 +370,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 new ComponentName( getPackageName(),FolderSyncService.class.getName() ) );
 
         builder.setPeriodic(JOB_PERIODIC_INTERVAL);
-
+        builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
         mJobScheduler.schedule(builder.build());
         syncFoldersNow();
         Log.i(LOG_TAG, "FolderSyncService JOB SCHEDULED!");
@@ -406,29 +406,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         FoldersSyncUtil.updateFolders(this, caller);
     }
 
-    private void checkIfNeedToUpdate(Folder[] folders, ServiceCaller caller) {
-        IsFoldersChangeTask task = new IsFoldersChangeTask(getApplicationContext(), caller);
-        task.execute(folders);
-    }
-
-//    @RequiresApi(api = Build.VERSION_CODES.N)
-//    private void schedulePhotosJobNougat() {
-//        Log.d(LOG_TAG, "schedulePhotosJobNougat started");
-//        mJobScheduler = (JobScheduler)
-//                getSystemService( Context.JOB_SCHEDULER_SERVICE );
-//
-//        JobInfo.Builder builder = new JobInfo.Builder( PHOTOS_JOB_ID,
-//                new ComponentName( getPackageName(),PhotosContentJob.class.getName() ) );
-//        builder.addTriggerContentUri(new JobInfo.TriggerContentUri(
-//        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-//        JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS));
-//        // Also look for general reports of changes in the overall provider.
-//        builder.addTriggerContentUri(new JobInfo.TriggerContentUri(MEDIA_URI, 0));
-//
-//        mJobScheduler.schedule(builder.build());
-//        Log.i(LOG_TAG, "JOB SCHEDULED!");
-//    }
-
     private void schedulePhotosJob() {
         Log.d(LOG_TAG, "schedulePhotosJob started");
         mJobScheduler = (JobScheduler)
@@ -436,7 +413,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         JobInfo.Builder builder = new JobInfo.Builder( PHOTOS_JOB_ID,
                 new ComponentName(getPackageName(),PhotosContentJob.class.getName() ) );
-
+        builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
         builder.setPeriodic(JOB_PERIODIC_INTERVAL);
 
         mJobScheduler.schedule(builder.build());

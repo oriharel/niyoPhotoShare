@@ -1,5 +1,11 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <CheckBoxPreference
+        android:key="master_switch"
+        android:title="@string/master_switch"
+        android:summaryOn="@string/master_switch_on_summary"
+        android:summaryOff="@string/master_switch_off_summary"
+        android:defaultValue="true"/>
     <Preference
         android:key="last_sync_folders"
         android:title="@string/last_sync_folders"/>

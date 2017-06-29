@@ -17,12 +17,12 @@ import photos.niyo.com.photosshare.tasks.IsFoldersChangeTask;
  * Created by oriharel on 19/06/2017.
  */
 
-public class FolderSyncService extends JobService {
+public class FolderSyncService extends AbstractJobService {
     public static final String LOG_TAG = FolderSyncService.class.getSimpleName();
     public static final String LAST_SYNC_KEY = "last_sync_folders";
 
     @Override
-    public boolean onStartJob(final JobParameters params) {
+    public boolean doJob(final JobParameters params) {
         Log.d(LOG_TAG, "onStartJob started");
 
         ServiceCaller caller = new ServiceCaller() {
