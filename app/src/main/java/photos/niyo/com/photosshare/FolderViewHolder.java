@@ -1,11 +1,14 @@
 package photos.niyo.com.photosshare;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -37,6 +40,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
     private TextView mDeleteAction;
     private TextView mEditAction;
     private TextView mEndDateView;
+    private TextView mOwner;
 
     public FolderViewHolder(View v) {
         super(v);
@@ -47,6 +51,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mEndDateView = (TextView) v.findViewById(R.id.endDateView);
         mDeleteAction = (TextView)v.findViewById(R.id.delete_folder);
         mEditAction = (TextView)v.findViewById(R.id.edit_folder);
+        mOwner = (TextView)v.findViewById(R.id.photo_owner);
         mDeleteAction.setOnClickListener(this);
         mEditAction.setOnClickListener(this);
         v.setOnClickListener(this);
@@ -107,6 +112,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         Log.d(LOG_TAG, "bindFolder started");
         mFolder = folder;
         mFolderName.setText(folder.getName());
+        mOwner.setVisibility(View.GONE);
         Calendar cal = Calendar.getInstance();
         Log.d(LOG_TAG, "setting start date: "+folder.getStartDate());
         cal.setTimeInMillis(folder.getStartDate());
@@ -130,6 +136,13 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
             if (previewImageBM != null) {
                 Log.d(LOG_TAG, "success loading bitmap file preview");
                 mFolderImage.setImageBitmap(previewImageBM);
+                SharedPreferences prefs = mOwner.getContext().getSharedPreferences("app", Context.MODE_PRIVATE);
+                String owner = prefs.getString(Photo.PHOTO_OWNER_KEY, "");
+                Log.d(LOG_TAG, "owner in prefs is: "+owner);
+                if (!TextUtils.isEmpty(owner)) {
+                    mOwner.setText(owner);
+                    mOwner.setVisibility(View.VISIBLE);
+                }
             }
             else {
                 Log.d(LOG_TAG, "fail to load file preview bitmap ("+filePath+")");

@@ -28,7 +28,7 @@ public class GetFilesListTask extends DriveAPIsTask {
         FileList fileList = mService.files().list()
                 .setQ("'"+parentFolder.getId()+"' in parents")
                 .setPageSize(10)
-                .setFields("nextPageToken, files(id, name)")
+                .setFields("nextPageToken, files(id, name, appProperties)")
                 .execute();
         result.setFileList(fileList);
         result.setResult(true);

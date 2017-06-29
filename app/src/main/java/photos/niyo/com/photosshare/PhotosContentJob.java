@@ -28,7 +28,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import photos.niyo.com.photosshare.tasks.GetActiveFolderFromDbTask;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -58,6 +60,7 @@ public class PhotosContentJob extends AbstractJobService{
 
     static final int PROJECTION_ID = 0;
     static final int PROJECTION_DATA = 1;
+    static final int PROJECTION_DATE_TAKEN = 2;
     static final String DCIM_DIR = Environment.getExternalStoragePublicDirectory(
             Environment.DIRECTORY_DCIM).getPath();
     private static final String[] SCOPES = { DriveScopes.DRIVE };
@@ -82,7 +85,7 @@ public class PhotosContentJob extends AbstractJobService{
                 Log.d(LOG_TAG, String.format("found active folder %s", activeFolder.getName()));
 
                 //get new photos
-                List<String> photoNames = getNewPhotosFileNames(params,
+                List<Photo> photoNames = getNewPhotosFileNames(params,
                         activeFolder.getStartDate());
 
                 if (photoNames.size() > 0) {
@@ -135,7 +138,7 @@ public class PhotosContentJob extends AbstractJobService{
         }
     }
 
-    private void uploadNewPhotosToDrive(final List<String> photoNames,
+    private void uploadNewPhotosToDrive(final List<Photo> photoNames,
                                         String folderId,
                                         final JobParameters params) {
         Log.d(LOG_TAG, "uploadNewPhotosToDrive started with folder Id: "+folderId);
@@ -160,7 +163,7 @@ public class PhotosContentJob extends AbstractJobService{
             }
         };
 
-        String[] photoNamesArray = new String[photoNames.size()];
+        Photo[] photoNamesArray = new Photo[photoNames.size()];
         photoNamesArray = photoNames.toArray(photoNamesArray);
         if (photoNames.size() > 0) {
             new UploadToGoogleDriveTask(mCredential, caller, folderId).execute(photoNamesArray);
@@ -170,13 +173,15 @@ public class PhotosContentJob extends AbstractJobService{
         }
     }
 
-    private class UploadToGoogleDriveTask extends AsyncTask<String, Void, Boolean> {
+    private class UploadToGoogleDriveTask extends AsyncTask<Photo, Void, Boolean> {
         private com.google.api.services.drive.Drive mService = null;
         private Exception mLastError = null;
         private ServiceCaller _caller;
         private String mFolderId;
 
-        UploadToGoogleDriveTask(GoogleAccountCredential credential, ServiceCaller caller, String folderId) {
+        UploadToGoogleDriveTask(GoogleAccountCredential credential,
+                                ServiceCaller caller,
+                                String folderId) {
             HttpTransport transport = AndroidHttp.newCompatibleTransport();
             JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
             mService = new com.google.api.services.drive.Drive.Builder(
@@ -193,7 +198,7 @@ public class PhotosContentJob extends AbstractJobService{
          * @param params no parameters needed for this task.
          */
         @Override
-        protected Boolean doInBackground(String... params) {
+        protected Boolean doInBackground(Photo... params) {
             Log.d(LOG_TAG, "[UploadToGoogleDriveTask] started with folder id: "+mFolderId);
             try {
                 return uploadToDrive(params);
@@ -212,23 +217,26 @@ public class PhotosContentJob extends AbstractJobService{
          * found.
          * @throws IOException
          */
-        private Boolean uploadToDrive(String[] fileNames) throws IOException {
+        private Boolean uploadToDrive(Photo[] photos) throws IOException {
             // Get a list of up to 10 files.
             Log.d(LOG_TAG, "uploadToDrive started");
             Boolean result = false;
 
-            for (String fileName :
-                    fileNames) {
-                Log.d(LOG_TAG, "uploading "+fileName+" to google drive");
+            for (Photo photo :
+                    photos) {
+                Log.d(LOG_TAG, "uploading "+photo.getName()+
+                        " to google drive with owner: "+photo.getOwner());
 
                 File fileMetadata = new File();
-                fileMetadata.setName(fileName);
+                fileMetadata.setName(photo.getName());
                 fileMetadata.setParents(Collections.singletonList(mFolderId));
-                java.io.File filePath = new java.io.File(fileName);
+                Map<String, String> props = new HashMap<>();
+                props.put("owner", photo.getOwner());
+                fileMetadata.setAppProperties(props);
+                java.io.File filePath = new java.io.File(photo.getName());
                 FileContent mediaContent = new FileContent("image/jpeg", filePath);
-                File file = null;
                 try {
-                    file = mService.files().create(fileMetadata, mediaContent)
+                    mService.files().create(fileMetadata, mediaContent)
                             .setFields("id, parents")
                             .execute();
                     result = true;
@@ -265,17 +273,15 @@ public class PhotosContentJob extends AbstractJobService{
         }
     }
 
-    private List<String> getNewPhotosFileNames(JobParameters params, Long startDate) {
+    private List<Photo> getNewPhotosFileNames(JobParameters params, Long startDate) {
         Log.d(LOG_TAG, "getNewPhotosFileNames started");
         String selection;
-        List<String> result = new ArrayList<>();
+        List<Photo> result = new ArrayList<>();
 
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//            selection = getNewPhotosNougat(params);
-//        }
-//        else {
-            selection = getNewPhotosLegacySelectionString(startDate);
-//        }
+        selection = getNewPhotosLegacySelectionString(startDate);
+        SharedPreferences pref = getApplicationContext().getSharedPreferences("app",
+                Context.MODE_PRIVATE);
+        String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
 
         Cursor cursor = null;
         boolean haveFiles = false;
@@ -304,7 +310,11 @@ public class PhotosContentJob extends AbstractJobService{
                         sb.append(cursor.getInt(PROJECTION_ID));
                         sb.append(": ");
                         sb.append(dir);
-                        result.add(dir);
+                        Photo photo = new Photo();
+                        photo.setName(dir);
+                        photo.setDateTaken(cursor.getLong(PROJECTION_DATE_TAKEN));
+                        photo.setOwner(accountName);
+                        result.add(photo);
                         sb.append("\n");
                     }
                     cursor.moveToNext();

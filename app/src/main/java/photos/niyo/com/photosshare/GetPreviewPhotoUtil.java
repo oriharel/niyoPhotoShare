@@ -1,12 +1,16 @@
 package photos.niyo.com.photosshare;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 
+import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
 import photos.niyo.com.photosshare.tasks.GetActiveFolderFromDbTask;
@@ -24,14 +28,19 @@ public class GetPreviewPhotoUtil {
             public void success(Object data) {
                 Log.d(LOG_TAG, "latest active preview downloaded");
                 context.getContentResolver().notifyChange(Constants.FOLDERS_URI, null);
-//                jobFinished(params, false);
+                DriveAPIsTask.DriveApiResult result = (DriveAPIsTask.DriveApiResult)data;
+                String fileOwner = result.getMessage();
+                SharedPreferences prefs = context.getSharedPreferences("app",
+                        Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putString(Photo.PHOTO_OWNER_KEY, fileOwner);
+                editor.apply();
                 globalCaller.success(data);
             }
 
             @Override
             public void failure(Object data, String description) {
                 Log.e(LOG_TAG, "Error downloading latest preview");
-//                jobFinished(params, false);
                 globalCaller.failure(data, description);
             }
         };
@@ -47,9 +56,22 @@ public class GetPreviewPhotoUtil {
                 if (files != null) {
                     Log.d(LOG_TAG, "GetFilesListTask returned "+files.size()+" files");
                     if (files.size() > 0) {
+                        File fileToDownload = files.get(0);
+                        Map<String, String> props = fileToDownload.getAppProperties();
+                        String ownerEmail = null;
+                        if (props != null) {
+                            ownerEmail = props.get("owner");
+                            Log.d(LOG_TAG, "found photo owner: "+ownerEmail);
+                        }
+                        else {
+                            Log.d(LOG_TAG, "no owner was found");
+                        }
+
                         DownloadFileTask downloadFileTask =
                                 new DownloadFileTask(context,
-                                        downloadFileCaller, files.get(0).getId());
+                                        downloadFileCaller,
+                                        fileToDownload.getId(),
+                                        ownerEmail);
                         downloadFileTask.execute();
                     }
                 }

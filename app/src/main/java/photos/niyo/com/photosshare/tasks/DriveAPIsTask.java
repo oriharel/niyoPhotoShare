@@ -133,5 +133,9 @@ public abstract class DriveAPIsTask extends AsyncTask<Folder, Void, DriveAPIsTas
         public void setFileList(FileList mFileList) {
             this.mFileList = mFileList;
         }
+
+        public String getMessage() {
+            return message;
+        }
     }
 }
