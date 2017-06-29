@@ -2,7 +2,9 @@ package photos.niyo.com.photosshare;
 
 
 import android.annotation.TargetApi;
+import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -202,6 +204,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference("last_sync_folders"));
             bindPreferenceSummaryToValue(findPreference("last_sync_photos"));
             bindPreferenceSummaryToValue(findPreference("master_switch"));
+            bindPreferenceSummaryToValue(findPreference("sync_interval"));
 
             SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy kk:mm:ss");
             SimpleDateFormat.getDateInstance();
@@ -219,6 +222,28 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
             cal.setTimeInMillis(lastSyncPhotos);
             findPreference("last_sync_photos").setSummary(sdf.format(cal.getTime()));
+            findPreference("sync_interval").setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    Log.d(LOG_TAG, "changing sync interval");
+                    Integer intervalInMinutes = Integer.valueOf((String)newValue);
+                    JobScheduler scheduler = (JobScheduler)preference.getContext().
+                            getSystemService(Context.JOB_SCHEDULER_SERVICE);
+                    List<JobInfo> jobInfos = scheduler.getAllPendingJobs();
+                    scheduler.cancelAll();
+                    Log.d(LOG_TAG, "cancelling all jobs");
+                    for (JobInfo jobInfo:
+                         jobInfos) {
+                        Log.d(LOG_TAG, "setting job "+jobInfo.getId()+" to "+intervalInMinutes+" minutes");
+                        JobInfo.Builder builder = new JobInfo.Builder(jobInfo.getId(),
+                                jobInfo.getService());
+                        builder.setPeriodic(intervalInMinutes*60*1000);
+                        scheduler.schedule(builder.build());
+                    }
+                    sBindPreferenceSummaryToValueListener.onPreferenceChange(preference,newValue);
+                    return true;
+                }
+            });
         }
 
         @Override

@@ -6,6 +6,12 @@
         android:summaryOn="@string/master_switch_on_summary"
         android:summaryOff="@string/master_switch_off_summary"
         android:defaultValue="true"/>
+    <ListPreference
+        android:key="sync_interval"
+        android:title="@string/sync_interval"
+        android:entries="@array/list_preference_entries"
+        android:entryValues="@array/list_preference_entry_values"
+        android:defaultValue="@integer/default_sync_interval"/>
     <Preference
         android:key="last_sync_folders"
         android:title="@string/last_sync_folders"/>
