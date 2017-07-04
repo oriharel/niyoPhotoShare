@@ -1,10 +1,15 @@
 package photos.niyo.com.photosshare;
 
+import android.database.Cursor;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+
+import photos.niyo.com.photosshare.db.PhotosShareColumns;
 
 /**
  * Created by oriharel on 04/06/2017.
@@ -13,6 +18,7 @@ import java.util.Date;
 public class Folder {
     public static final String LOG_TAG = Folder.class.getSimpleName();
     public static final String APP_ID = "app_id";
+    private boolean isActive;
 
     public String getName() {
         return mName;
@@ -74,4 +80,51 @@ public class Folder {
     public String toString() {
         return "Id: "+mId+" Name: "+mName+" Start Date: "+mStartDate+" End Date: "+mEndDate+" Shared With: "+mSharedWith;
     }
+
+    @Override
+    public boolean equals(Object folder) {
+        if (!(folder instanceof Folder)) {
+            return false;
+        }
+
+        Folder otherFolder = (Folder) folder;
+
+        return otherFolder.getId().equals(mId) &&
+                otherFolder.getSharedWith().equals(mSharedWith) &&
+                otherFolder.getStartDate().equals(mStartDate) &&
+                otherFolder.getEndDate().equals(mEndDate);
+
+    }
+
+    public void setIsActive(boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public static Folder createFolderFromCursor(Cursor cursor, Boolean isActive) {
+
+        int colFolderNameIndex = cursor.getColumnIndex(PhotosShareColumns.FOLDER_NAME);
+        String foldeName = cursor.getString(colFolderNameIndex);
+        int colFolderIdIndex = cursor.getColumnIndex(PhotosShareColumns.FOLDER_ID);
+        String folderId = cursor.getString(colFolderIdIndex);
+        int colCreatedAtIndex = cursor.getColumnIndex(PhotosShareColumns.CREATE_AT);
+        int colStartDateIndex = cursor.getColumnIndex(PhotosShareColumns.START_DATE);
+        int colEndDateIndex = cursor.getColumnIndex(PhotosShareColumns.END_DATE);
+        int colSharedWith = cursor.getColumnIndex(PhotosShareColumns.SHARED_WITH);
+        String createdAt = cursor.getString(colCreatedAtIndex);
+        Folder folder = new Folder();
+        folder.setName(foldeName);
+        folder.setCreatedAt(Long.valueOf(createdAt));
+        folder.setStartDate(cursor.getLong(colStartDateIndex));
+        folder.setEndDate(cursor.getLong(colEndDateIndex));
+        folder.setIsActive(isActive);
+        folder.setId(folderId);
+        folder.setSharedWith(cursor.getString(colSharedWith));
+
+        return folder;
+    }
+
 }

@@ -129,27 +129,30 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
                 DownloadFileTask.LATEST_FILE_NAME;
 
         Log.d(LOG_TAG, "Trying to load file: ("+filePath+")");
-        try {
-            FileInputStream fileIn = mFolderImage.getContext().
-                    openFileInput(DownloadFileTask.LATEST_FILE_NAME);
-            Bitmap previewImageBM = BitmapFactory.decodeStream(fileIn);
-            if (previewImageBM != null) {
-                Log.d(LOG_TAG, "success loading bitmap file preview");
-                mFolderImage.setImageBitmap(previewImageBM);
-                SharedPreferences prefs = mOwner.getContext().getSharedPreferences("app", Context.MODE_PRIVATE);
-                String owner = prefs.getString(Photo.PHOTO_OWNER_KEY, "");
-                Log.d(LOG_TAG, "owner in prefs is: "+owner);
-                if (!TextUtils.isEmpty(owner)) {
-                    mOwner.setText(owner);
-                    mOwner.setVisibility(View.VISIBLE);
+        if (mFolder.isActive()) {
+            try {
+                FileInputStream fileIn = mFolderImage.getContext().
+                        openFileInput(DownloadFileTask.LATEST_FILE_NAME);
+                Bitmap previewImageBM = BitmapFactory.decodeStream(fileIn);
+                if (previewImageBM != null) {
+                    Log.d(LOG_TAG, "success loading bitmap file preview");
+                    mFolderImage.setImageBitmap(previewImageBM);
+                    SharedPreferences prefs = mOwner.getContext().getSharedPreferences("app", Context.MODE_PRIVATE);
+                    String owner = prefs.getString(Photo.PHOTO_OWNER_KEY, "");
+                    Log.d(LOG_TAG, "owner in prefs is: "+owner);
+                    if (!TextUtils.isEmpty(owner)) {
+                        mOwner.setText(owner);
+                        mOwner.setVisibility(View.VISIBLE);
+                    }
                 }
+                else {
+                    Log.d(LOG_TAG, "fail to load file preview bitmap ("+filePath+")");
+                }
+            } catch (FileNotFoundException e) {
+                Log.d(LOG_TAG, "can't find file "+DownloadFileTask.LATEST_FILE_NAME);
             }
-            else {
-                Log.d(LOG_TAG, "fail to load file preview bitmap ("+filePath+")");
-            }
-        } catch (FileNotFoundException e) {
-            Log.d(LOG_TAG, "can't find file "+DownloadFileTask.LATEST_FILE_NAME);
         }
+
 
 
 

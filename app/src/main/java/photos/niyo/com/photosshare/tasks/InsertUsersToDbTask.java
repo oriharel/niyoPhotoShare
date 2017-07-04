@@ -28,9 +28,10 @@ public class InsertUsersToDbTask extends AsyncTask<User, Void, Boolean> {
     @Override
     protected Boolean doInBackground(User... params) {
 
-        Log.d(LOG_TAG, "doInBackground started");
+        Log.d(LOG_TAG, "doInBackground started with "+params.length+" users");
         for (User user :
                 params) {
+            Log.d(LOG_TAG, "inserting user "+user.getEmailAddress());
             ContentValues values = new ContentValues();
 
             values.put(UsersColumns.ID, user.getId());

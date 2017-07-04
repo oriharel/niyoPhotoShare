@@ -6,7 +6,9 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import photos.niyo.com.photosshare.Constants;
 import photos.niyo.com.photosshare.Folder;
@@ -32,31 +34,38 @@ public class IsFoldersChangeTask extends AsyncTask<Folder, Void, Boolean> {
         Log.d(LOG_TAG, "doInBackground started with "+params.length+" folders");
         Cursor cursor = mContext.getContentResolver().query(Constants.FOLDERS_URI, null, null, null, null);
 
-        List<String> folderIds = new ArrayList<>();
+        Map<String, Folder> foldersFromDb = new HashMap<>();
 
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 while (!cursor.isAfterLast()) {
-                    int colFolderIdIndex = cursor.getColumnIndex(PhotosShareColumns.FOLDER_ID);
-                    String folderId = cursor.getString(colFolderIdIndex);
-                    folderIds.add(folderId);
+                    Folder folder = Folder.createFolderFromCursor(cursor, false);
+                    foldersFromDb.put(folder.getId(), folder);
                     cursor.moveToNext();
                 }
             }
             cursor.close();
         }
 
-        if (folderIds.size() != params.length) {
+        if (foldersFromDb.size() != params.length) {
+            Log.d(LOG_TAG, "num of db folders ("+foldersFromDb.size()+") different from num of Drive ("+params.length+")");
             return true;
         }
 
         for (Folder folder : params) {
-            if (!folderIds.contains(folder.getId())) {
+            Folder folderFromDb = foldersFromDb.get(folder.getId());
+            if (folderFromDb == null) {
+                Log.d(LOG_TAG, "found Drive folder that is not in db ("+folder.getId()+")");
+                return true;
+            }
+
+            if (!folderFromDb.equals(folder)) {
+                Log.d(LOG_TAG, "Found Drive folder different from db. Drive: "+folder+" db: "+folderFromDb);
                 return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     @Override

@@ -56,7 +56,7 @@ public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
                 Log.d(LOG_TAG, "[GetActiveFolderTask] found folder: "+result);
             }
             else {
-                Log.e(LOG_TAG, "cursor is empty");
+                Log.d(LOG_TAG, "cursor is empty");
             }
 
             cursor.close();
@@ -74,9 +74,9 @@ public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
             mCaller.success(folder);
         }
         else {
-            Log.e(LOG_TAG, "error getting active folder");
+            Log.d(LOG_TAG, "no active folder");
             if (folder == null) {
-                Log.e(LOG_TAG, "folder is null");
+                Log.d(LOG_TAG, "folder is null");
             }
             else if (folder.getId() == null) {
                 Log.e(LOG_TAG, "folder id is null");

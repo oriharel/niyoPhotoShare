@@ -101,7 +101,7 @@ public class GetPreviewPhotoUtil {
 
             @Override
             public void failure(Object data, String description) {
-                Log.e(LOG_TAG, "Error getting active folder from db");
+                Log.d(LOG_TAG, "no active folder in db");
 //                jobFinished(params, false);
                 globalCaller.failure(data, description);
             }

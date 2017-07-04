@@ -154,6 +154,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public void success(Object data) {
                 Log.d(LOG_TAG, "[showActiveFolder] success");
                 Folder activeFolder = (Folder)data;
+                activeFolder.setIsActive(true);
                 findViewById(R.id.folderCard).setVisibility(View.VISIBLE);
                 FolderViewHolder holder = new FolderViewHolder(findViewById(R.id.folderCard));
                 holder.bindFolder(activeFolder);
@@ -478,22 +479,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             findViewById(R.id.archivedListLabel).setVisibility(View.VISIBLE);
             findViewById(R.id.emptyView).setVisibility(View.GONE);
             while (!cursor.isAfterLast()) {
-                int colFolderNameIndex = cursor.getColumnIndex(PhotosShareColumns.FOLDER_NAME);
-                String foldeName = cursor.getString(colFolderNameIndex);
-                int colFolderIdIndex = cursor.getColumnIndex(PhotosShareColumns.FOLDER_ID);
-                String folderId = cursor.getString(colFolderIdIndex);
-                int colCreatedAtIndex = cursor.getColumnIndex(PhotosShareColumns.CREATE_AT);
-                int colStartDateIndex = cursor.getColumnIndex(PhotosShareColumns.START_DATE);
-                int colEndDateIndex = cursor.getColumnIndex(PhotosShareColumns.END_DATE);
-                String createdAt = cursor.getString(colCreatedAtIndex);
-                Folder folder = new Folder();
-                Log.d(LOG_TAG, "adding "+foldeName);
-                folder.setName(foldeName);
-                folder.setCreatedAt(Long.valueOf(createdAt));
-                folder.setStartDate(cursor.getLong(colStartDateIndex));
-                folder.setEndDate(cursor.getLong(colEndDateIndex));
-                Log.d(LOG_TAG, "endDate for folder is: "+folder.getEndDate());
-                folder.setId(folderId);
+                Folder folder = Folder.createFolderFromCursor(cursor, false);
                 mFoldersList.add(folder);
                 cursor.moveToNext();
             }
