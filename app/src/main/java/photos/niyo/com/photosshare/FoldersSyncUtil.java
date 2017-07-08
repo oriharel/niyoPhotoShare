@@ -16,6 +16,7 @@ public class FoldersSyncUtil {
     public static final String LOG_TAG = FoldersSyncUtil.class.getSimpleName();
 
     public static void updateFolders(final Context context, final ServiceCaller globalCaller) {
+        Log.d(LOG_TAG, "updateFolders started");
         final ServiceCaller dbCaller = new ServiceCaller() {
             @Override
             public void success(Object data) {

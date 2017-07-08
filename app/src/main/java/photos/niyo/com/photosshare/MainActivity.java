@@ -339,7 +339,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         builder.setPeriodic(JOB_PERIODIC_INTERVAL);
         builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
         mJobScheduler.schedule(builder.build());
-        syncFoldersNow();
         Log.i(LOG_TAG, "GetPreviewPhotoService JOB SCHEDULED!");
     }
 
