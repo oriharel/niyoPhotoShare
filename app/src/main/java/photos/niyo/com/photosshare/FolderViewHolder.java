@@ -152,6 +152,10 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
                 Log.d(LOG_TAG, "can't find file "+DownloadFileTask.LATEST_FILE_NAME);
             }
         }
+        else {
+            mDeleteAction.setVisibility(View.GONE);
+            mEditAction.setVisibility(View.GONE);
+        }
 
 
 
