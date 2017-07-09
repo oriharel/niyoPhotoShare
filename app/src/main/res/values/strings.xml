@@ -89,4 +89,6 @@
     <string name="master_switch_on_summary">Photos are syncing periodically</string>
     <string name="master_switch_off_summary">Photo sync is disabled</string>
     <string name="sync_interval">Sync Interval</string>
+    <string name="noActiveEvent">No Active Event</string>
+    <string name="clickToCreate">Click on the \'+\' to create event</string>
 </resources>

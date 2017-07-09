@@ -33,6 +33,8 @@ import photos.niyo.com.photosshare.tasks.GetActiveFolderFromDbTask;
 
 public class FolderViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
     public static final String LOG_TAG = FolderViewHolder.class.getSimpleName();
+    private static final String EMPTY = "empty";
+    private static final String NOT_EMPTY = "not_empty";
     private ImageView mFolderImage;
     private TextView mFolderName;
     private TextView mFolderDescription;
@@ -41,10 +43,11 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
     private TextView mEditAction;
     private TextView mEndDateView;
     private TextView mOwner;
+    private View mFolderView;
 
     public FolderViewHolder(View v) {
         super(v);
-
+        mFolderView = v;
         mFolderImage = (ImageView) v.findViewById(R.id.folder_event_image);
         mFolderName = (TextView) v.findViewById(R.id.folder_event_title);
         mFolderDescription = (TextView) v.findViewById(R.id.folder_description);
@@ -55,6 +58,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mDeleteAction.setOnClickListener(this);
         mEditAction.setOnClickListener(this);
         v.setOnClickListener(this);
+        v.setTag(EMPTY);
     }
 
     //5
@@ -99,6 +103,10 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
             intent.putExtra(PhotosShareColumns.FOLDER_ID, mFolder.getId());
             v.getContext().startActivity(intent);
         }
+        else if (mFolderView.getTag().equals(EMPTY)) {
+            Intent intent = new Intent(mFolderView.getContext(), CreateEvent.class);
+            mFolderView.getContext().startActivity(intent);
+        }
         else {
             String url = "https://drive.google.com/drive/u/0/folders/";
             url += mFolder.getId();
@@ -110,6 +118,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
 
     public void bindFolder(final Folder folder) {
         Log.d(LOG_TAG, "bindFolder started");
+        mFolderView.setTag(NOT_EMPTY);
         mFolder = folder;
         mFolderName.setText(folder.getName());
         mOwner.setVisibility(View.GONE);
@@ -125,10 +134,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         Log.d(LOG_TAG, "setting end date: "+folder.getEndDate());
         cal.setTimeInMillis(folder.getEndDate());
         mEndDateView.setText("End: "+sdf.format(cal.getTime()));
-        String filePath = mFolderImage.getContext().getFilesDir()+"/"+
-                DownloadFileTask.LATEST_FILE_NAME;
 
-        Log.d(LOG_TAG, "Trying to load file: ("+filePath+")");
         if (mFolder.isActive()) {
             try {
                 FileInputStream fileIn = mFolderImage.getContext().
@@ -146,6 +152,9 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
                     }
                 }
                 else {
+                    String filePath = mFolderImage.getContext().getFilesDir()+"/"+
+                            DownloadFileTask.LATEST_FILE_NAME;
+
                     Log.d(LOG_TAG, "fail to load file preview bitmap ("+filePath+")");
                 }
             } catch (FileNotFoundException e) {
@@ -156,9 +165,13 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
             mDeleteAction.setVisibility(View.GONE);
             mEditAction.setVisibility(View.GONE);
         }
+    }
 
-
-
-
+    public void bindEmptyFolder() {
+        mFolderName.setText(R.string.noActiveEvent);
+        mDeleteAction.setVisibility(View.GONE);
+        mEditAction.setVisibility(View.GONE);
+        mFolderDescription.setText(R.string.clickToCreate);
+        mEndDateView.setText("");
     }
 }

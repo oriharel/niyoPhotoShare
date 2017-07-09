@@ -25,8 +25,8 @@ public class FoldersListAdapter extends RecyclerView.Adapter {
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Log.d(LOG_TAG, "onCreateViewHolder started");
         View inflatedView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.folder_item, parent, false);
-        FolderViewHolder holder = new FolderViewHolder(inflatedView);
+                .inflate(R.layout.archived_folder_item, parent, false);
+        ArchivedFolderViewHolder holder = new ArchivedFolderViewHolder(inflatedView);
         return holder;
     }
 
@@ -34,7 +34,7 @@ public class FoldersListAdapter extends RecyclerView.Adapter {
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         Log.d(LOG_TAG, "onBindViewHolder started");
         Folder itemFolder = mFolders.get(position);
-        ((FolderViewHolder)holder).bindFolder(itemFolder);
+        ((ArchivedFolderViewHolder)holder).bindFolder(itemFolder);
     }
 
     @Override

@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         showActiveFolder();
         mRecyclerView = (RecyclerView) findViewById(R.id.archivedFoldersList);
-        mLinearLayoutManager = new LinearLayoutManager(this);
+        mLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
 
         mFoldersList = new ArrayList<>();
@@ -163,6 +163,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             @Override
             public void failure(Object data, String description) {
                 Log.e(LOG_TAG, "[showActiveFolder] can't find active folder");
+                findViewById(R.id.folderCard).setVisibility(View.VISIBLE);
+                FolderViewHolder holder = new FolderViewHolder(findViewById(R.id.folderCard));
+                holder.bindEmptyFolder();
             }
         };
 
