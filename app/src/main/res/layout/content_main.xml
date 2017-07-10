@@ -12,10 +12,131 @@
         android:layout_margin="@dimen/fab_margin"
         android:orientation="vertical">
 
-        <include
-            layout="@layout/folder_item"
+        <android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/folderCard"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/chip_icon_horizontal_margin"
+            android:layout_marginRight="@dimen/chip_icon_horizontal_margin"
+            android:layout_marginTop="@dimen/chip_icon_horizontal_margin"
+            app:cardCornerRadius="4dp">
+
+            <RelativeLayout
+                android:id="@+id/folderLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <FrameLayout
+                    android:id="@+id/folder_event_frame"
+                    android:layout_width="match_parent"
+                    android:layout_height="300dp">
+
+                    <ImageView
+                        android:id="@+id/folder_event_image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@string/preview_description"
+                        android:scaleType="centerCrop"
+                        app:srcCompat="@mipmap/pic5" />
+
+                    <TextView
+                        android:id="@+id/photo_owner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|right"
+                        android:background="@color/bg_card_folder_title"
+                        android:padding="5dp"
+                        android:text="TextView"
+                        android:textColor="@android:color/white"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/folder_event_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
+                        android:background="@color/bg_card_folder_title"
+                        android:paddingBottom="10dp"
+                        android:paddingLeft="16dp"
+                        android:paddingRight="16dp"
+                        android:paddingTop="10dp"
+                        android:text="TextView"
+                        android:textColor="@android:color/white"
+                        android:textSize="24sp" />
+
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/folder_description"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/folder_event_frame"
+                    android:layout_gravity="start"
+                    android:paddingBottom="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingStart="16dp"
+                    android:paddingTop="16dp"
+                    android:text="Created at..."
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/endDateView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/folder_event_frame"
+                    android:layout_gravity="start"
+                    android:layout_toRightOf="@id/folder_description"
+                    android:paddingBottom="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingStart="16dp"
+                    android:paddingTop="16dp"
+                    android:text="TextView"
+                    android:textSize="16sp" />
+
+                <View
+                    android:id="@+id/card_view_line"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_below="@id/folder_description"
+                    android:background="@color/divider_color" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/card_view_line"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/delete_folder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_ripple_mask"
+                        android:paddingBottom="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingStart="16dp"
+                        android:paddingTop="16dp"
+                        android:text="DELETE"
+                        android:textSize="24sp" />
+
+                    <TextView
+                        android:id="@+id/edit_folder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_ripple_mask"
+                        android:paddingBottom="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingStart="16dp"
+                        android:paddingTop="16dp"
+                        android:text="EDIT"
+                        android:textSize="24sp" />
+                </LinearLayout>
+
+            </RelativeLayout>
+
+
+        </android.support.v7.widget.CardView>
 
         <TextView
             android:id="@+id/archivedListLabel"
