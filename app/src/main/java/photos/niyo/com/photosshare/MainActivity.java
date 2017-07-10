@@ -80,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     static final int REQUEST_AUTHORIZATION = 1001;
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
+    static final int REQUEST_START_DATE = 1004;
     public static final String PREF_ACCOUNT_NAME = "accountName";
     public static final Integer PHOTOS_JOB_ID = 1;
     public static final Integer FOLDERS_JOB_ID = 2;

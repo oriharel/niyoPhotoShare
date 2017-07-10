@@ -93,4 +93,6 @@
     <string name="clickToCreate">Click on the \'+\' to create event</string>
     <string name="attendees">Attendees</string>
     <string name="event_name_example">e.g. \'Vacation in Paris\'</string>
+    <string name="start">Start</string>
+    <string name="end">End</string>
 </resources>

@@ -12,6 +12,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.DialogFragment;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -65,7 +66,7 @@ import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
 import static photos.niyo.com.photosshare.MainActivity.REQUEST_AUTHORIZATION;
 import static photos.niyo.com.photosshare.MainActivity.REQUEST_GOOGLE_PLAY_SERVICES;
 
-public class CreateEvent extends AppCompatActivity  {
+public class CreateEvent extends AppCompatActivity implements DatePickerFragment.DatePickerFragmentListener {
 
     public static final String LOG_TAG = CreateEvent.class.getSimpleName();
     private Folder mEditedFolder;
@@ -138,6 +139,20 @@ public class CreateEvent extends AppCompatActivity  {
             createBtn.setText("Update");
         }
 
+        initDatePickers();
+
+    }
+
+    private void initDatePickers() {
+        EditText startDate = (EditText)findViewById(R.id.startText);
+        startDate.setFocusable(false);
+        startDate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DialogFragment newFragment = new DatePickerFragment();
+                newFragment.show(getSupportFragmentManager(), "timePicker");
+            }
+        });
     }
 
     private void fetchWritersFromDb() {
@@ -288,6 +303,12 @@ public class CreateEvent extends AppCompatActivity  {
         else {
             Log.e(LOG_TAG, "Error. folder id is null");
         }
+    }
+
+    @Override
+    public void onFinishDatePickerDialog(int year, int month, int day) {
+        EditText startDate = (EditText)findViewById(R.id.startText);
+        startDate.setText(day+"/"+month+"/"+year);
     }
 
     private class MakePermissionRequest extends AsyncTask<String, Void, User[]> {
