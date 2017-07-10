@@ -91,4 +91,6 @@
     <string name="sync_interval">Sync Interval</string>
     <string name="noActiveEvent">No Active Event</string>
     <string name="clickToCreate">Click on the \'+\' to create event</string>
+    <string name="attendees">Attendees</string>
+    <string name="event_name_example">e.g. \'Vacation in Paris\'</string>
 </resources>

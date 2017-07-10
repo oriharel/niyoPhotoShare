@@ -89,8 +89,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+//        setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         final MainActivity context = this;
@@ -113,7 +113,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         findViewById(R.id.archivedFoldersList).setVisibility(View.GONE);
         findViewById(R.id.archivedListLabel).setVisibility(View.GONE);
         findViewById(R.id.folderCard).setVisibility(View.GONE);
-        findViewById(R.id.emptyView).setVisibility(View.GONE);
 
         mObserver = new ContentObserver(mHandler) {
             @Override
@@ -479,7 +478,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         if (cursor.moveToFirst()) {
             findViewById(R.id.archivedFoldersList).setVisibility(View.VISIBLE);
             findViewById(R.id.archivedListLabel).setVisibility(View.VISIBLE);
-            findViewById(R.id.emptyView).setVisibility(View.GONE);
             while (!cursor.isAfterLast()) {
                 Folder folder = Folder.createFolderFromCursor(cursor, false);
                 mFoldersList.add(folder);
@@ -499,7 +497,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private void showEmptyPage() {
         Log.d(LOG_TAG, "showEmptyPage started");
-        findViewById(R.id.emptyView).setVisibility(View.VISIBLE);
         findViewById(R.id.listContainer).setVisibility(View.GONE);
     }
 

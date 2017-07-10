@@ -27,17 +27,31 @@
         android:id="@+id/eventName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/chip_close_icon_size"
         android:layout_marginLeft="@dimen/side_margin"
         android:layout_marginRight="@dimen/side_margin"
+        android:layout_marginTop="@dimen/chip_close_icon_size"
         android:ems="10"
+        android:hint="@string/event_name_example"
         android:inputType="textPersonName" />
+
+    <TextView
+        android:id="@+id/attendees"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/side_margin"
+        android:layout_marginRight="@dimen/side_margin"
+        android:layout_marginTop="@dimen/firstItemTop"
+        android:text="@string/attendees" />
 
     <com.android.ex.chips.RecipientEditTextView
         android:id="@+id/inviteEditBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/chip_close_icon_size"
         android:layout_marginLeft="@dimen/side_margin"
         android:layout_marginRight="@dimen/side_margin"
+        android:layout_marginTop="@dimen/chip_close_icon_size"
         android:hint="@string/nameOrEmail"
         android:minHeight="58dp" />
 
@@ -100,11 +114,12 @@
     </com.google.android.flexbox.FlexboxLayout>
 
 
-
     <Button
         android:id="@+id/createFolderBtn"
-        android:layout_width="match_parent"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:layout_marginLeft="@dimen/side_margin"
         android:layout_marginRight="@dimen/side_margin"
         android:layout_marginTop="20dp"
