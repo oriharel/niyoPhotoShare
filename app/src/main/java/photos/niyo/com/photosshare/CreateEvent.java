@@ -70,6 +70,8 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
 
     public static final String LOG_TAG = CreateEvent.class.getSimpleName();
     private Folder mEditedFolder;
+    private static String START_DATE_TAG = "startDate";
+    private static String END_DATE_TAG = "endDate";
 
     String mFolderId = null;
 
@@ -150,7 +152,17 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
             @Override
             public void onClick(View v) {
                 DialogFragment newFragment = new DatePickerFragment();
-                newFragment.show(getSupportFragmentManager(), "timePicker");
+                newFragment.show(getSupportFragmentManager(), START_DATE_TAG);
+            }
+        });
+
+        EditText endDate = (EditText)findViewById(R.id.endText);
+        endDate.setFocusable(false);
+        endDate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DialogFragment newFragment = new DatePickerFragment();
+                newFragment.show(getSupportFragmentManager(), END_DATE_TAG);
             }
         });
     }
@@ -306,9 +318,10 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
     }
 
     @Override
-    public void onFinishDatePickerDialog(int year, int month, int day) {
-        EditText startDate = (EditText)findViewById(R.id.startText);
-        startDate.setText(day+"/"+month+"/"+year);
+    public void onFinishDatePickerDialog(int year, int month, int day, String tag) {
+        int viewId = tag.equals(START_DATE_TAG) ? R.id.startText : R.id.endText;
+        EditText dateText = (EditText)findViewById(viewId);
+        dateText.setText(day+"/"+month+"/"+year);
     }
 
     private class MakePermissionRequest extends AsyncTask<String, Void, User[]> {

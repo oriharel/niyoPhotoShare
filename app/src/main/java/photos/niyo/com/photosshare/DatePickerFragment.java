@@ -2,15 +2,11 @@ package photos.niyo.com.photosshare;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
-import android.app.TimePickerDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
-import android.text.format.DateFormat;
 import android.widget.DatePicker;
-import android.widget.EditText;
-import android.widget.TimePicker;
 
 import java.util.Calendar;
 
@@ -36,6 +32,7 @@ public class DatePickerFragment extends DialogFragment
         }
     }
 
+    @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         // Use the current date as the default date in the picker
@@ -50,10 +47,10 @@ public class DatePickerFragment extends DialogFragment
 
     @Override
     public void onDateSet(DatePicker view, int year, int month, int day) {
-        listener.onFinishDatePickerDialog(year, month, day);
+        listener.onFinishDatePickerDialog(year, month, day, getTag());
     }
 
-    public interface DatePickerFragmentListener {
-        void onFinishDatePickerDialog(int year, int month, int day);
+    interface DatePickerFragmentListener {
+        void onFinishDatePickerDialog(int year, int month, int day, String tag);
     }
 }
