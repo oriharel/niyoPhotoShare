@@ -46,12 +46,14 @@ public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
                 int colFolderStartDate = cursor.getColumnIndex(PhotosShareColumns.START_DATE);
                 int colFolderEndDate = cursor.getColumnIndex(PhotosShareColumns.END_DATE);
                 int colFolderSharedWithIndex = cursor.getColumnIndex(PhotosShareColumns.SHARED_WITH);
+                int colOwnersIndex = cursor.getColumnIndex(PhotosShareColumns.OWNERS);
 
                 result.setId(cursor.getString(colFolderIdIndex));
                 result.setName(cursor.getString(colFolderNameIndex));
                 result.setStartDate(cursor.getLong(colFolderStartDate));
                 result.setEndDate(cursor.getLong(colFolderEndDate));
                 result.setSharedWith(cursor.getString(colFolderSharedWithIndex));
+                result.setOwners(cursor.getString(colOwnersIndex));
 
                 Log.d(LOG_TAG, "[GetActiveFolderTask] found folder: "+result);
             }

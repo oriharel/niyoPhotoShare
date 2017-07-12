@@ -34,7 +34,7 @@ public class GetFoldersTask extends DriveAPIsTask {
         Log.d(LOG_TAG, "actualDoInBackground started with q="+queryString);
         FileList fileList = mService.files().list()
                 .setPageSize(30)
-                .setFields("nextPageToken, files(id, kind, parents, name, appProperties, permissions)")
+                .setFields("nextPageToken, files(id, kind, parents, name, owners, appProperties, permissions)")
                 .setQ(queryString)
                 .execute();
         List<File> files = fileList.getFiles();
@@ -58,11 +58,23 @@ public class GetFoldersTask extends DriveAPIsTask {
             String createAtStr = file.getAppProperties().get("created_at");
             folder.setCreatedAt(Long.valueOf(createAtStr));
             folder.setSharedWith(getWriters(file));
+            folder.setOwners(getOwners(file));
             folders[i] = folder;
         }
         result.setFolders(folders);
         result.setResult(true);
         return result;
+    }
+
+    private String getOwners(File file) {
+        List<com.google.api.services.drive.model.User> owners = file.getOwners();
+        List<String> ownerEmails = new ArrayList<>();
+        for (com.google.api.services.drive.model.User user :
+                owners) {
+            ownerEmails.add(user.getEmailAddress());
+        }
+
+        return TextUtils.join(",", ownerEmails);
     }
 
     private String getWriters(File file) {

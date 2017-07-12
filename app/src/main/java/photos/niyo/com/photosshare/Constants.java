@@ -29,7 +29,8 @@ public class Constants {
             PhotosShareColumns.SHARED_WITH,
             PhotosShareColumns.LOCATION,
             PhotosShareColumns.START_DATE,
-            PhotosShareColumns.END_DATE
+            PhotosShareColumns.END_DATE,
+            PhotosShareColumns.OWNERS
     };
 
     public static final String[] USERS_PROJECTION = new String[] {

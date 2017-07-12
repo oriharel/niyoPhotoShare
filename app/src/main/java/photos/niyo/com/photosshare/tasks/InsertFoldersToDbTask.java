@@ -35,6 +35,7 @@ public class InsertFoldersToDbTask extends AsyncTask<Folder, Void, Boolean> {
             values.put(PhotosShareColumns.CREATE_AT, folder.getCreatedAt());
             values.put(PhotosShareColumns.START_DATE, folder.getStartDate());
             values.put(PhotosShareColumns.END_DATE, folder.getEndDate());
+            values.put(PhotosShareColumns.OWNERS, folder.getOwners());
             Log.d(LOG_TAG, "inserting folder "+folder.getName()+" with sharedWith: "+ folder.getSharedWith());
             values.put(PhotosShareColumns.SHARED_WITH, folder.getSharedWith());
             Uri result = _context.getContentResolver().insert(Constants.FOLDERS_URI, values);

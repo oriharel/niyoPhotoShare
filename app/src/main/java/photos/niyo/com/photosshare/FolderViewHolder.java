@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -24,8 +23,8 @@ import java.util.Calendar;
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
 import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.DeleteFolderTask;
-import photos.niyo.com.photosshare.tasks.DriveAPIsTask;
-import photos.niyo.com.photosshare.tasks.GetActiveFolderFromDbTask;
+
+import static photos.niyo.com.photosshare.MainActivity.PREF_ACCOUNT_NAME;
 
 /**
  * Created by oriharel on 04/06/2017.
@@ -42,7 +41,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
     private TextView mDeleteAction;
     private TextView mEditAction;
     private TextView mEndDateView;
-    private TextView mOwner;
+    private TextView mPhotoOwner;
     private View mFolderView;
 
     public FolderViewHolder(View v) {
@@ -54,7 +53,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mEndDateView = (TextView) v.findViewById(R.id.endDateView);
         mDeleteAction = (TextView)v.findViewById(R.id.delete_folder);
         mEditAction = (TextView)v.findViewById(R.id.edit_folder);
-        mOwner = (TextView)v.findViewById(R.id.photo_owner);
+        mPhotoOwner = (TextView)v.findViewById(R.id.photo_owner);
         mDeleteAction.setOnClickListener(this);
         mEditAction.setOnClickListener(this);
         v.setOnClickListener(this);
@@ -121,15 +120,12 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mFolderView.setTag(NOT_EMPTY);
         mFolder = folder;
         mFolderName.setText(folder.getName());
-        mOwner.setVisibility(View.GONE);
+        mPhotoOwner.setVisibility(View.GONE);
         Calendar cal = Calendar.getInstance();
         Log.d(LOG_TAG, "setting start date: "+folder.getStartDate());
         cal.setTimeInMillis(folder.getStartDate());
 
         DateFormat sdf = DateFormat.getDateInstance();
-
-        SimpleDateFormat.getDateInstance();
-
         mFolderDescription.setText("Start: "+sdf.format(cal.getTime()));
         Log.d(LOG_TAG, "setting end date: "+folder.getEndDate());
         cal.setTimeInMillis(folder.getEndDate());
@@ -143,12 +139,12 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
                 if (previewImageBM != null) {
                     Log.d(LOG_TAG, "success loading bitmap file preview");
                     mFolderImage.setImageBitmap(previewImageBM);
-                    SharedPreferences prefs = mOwner.getContext().getSharedPreferences("app", Context.MODE_PRIVATE);
+                    SharedPreferences prefs = mPhotoOwner.getContext().getSharedPreferences("app", Context.MODE_PRIVATE);
                     String owner = prefs.getString(Photo.PHOTO_OWNER_KEY, "");
                     Log.d(LOG_TAG, "owner in prefs is: "+owner);
                     if (!TextUtils.isEmpty(owner)) {
-                        mOwner.setText(owner);
-                        mOwner.setVisibility(View.VISIBLE);
+                        mPhotoOwner.setText(owner);
+                        mPhotoOwner.setVisibility(View.VISIBLE);
                     }
                 }
                 else {
@@ -161,10 +157,21 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
                 Log.d(LOG_TAG, "can't find file "+DownloadFileTask.LATEST_FILE_NAME);
             }
         }
+        String owners = mFolder.getOwners();
+
+        SharedPreferences pref = mDeleteAction.getContext().getSharedPreferences("app", Context.MODE_PRIVATE);
+        String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
+
+        if (accountName != null && owners.contains(accountName)) {
+            mDeleteAction.setVisibility(View.VISIBLE);
+            mEditAction.setVisibility(View.VISIBLE);
+        }
         else {
             mDeleteAction.setVisibility(View.GONE);
             mEditAction.setVisibility(View.GONE);
         }
+
+
     }
 
     public void bindEmptyFolder() {

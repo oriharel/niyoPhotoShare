@@ -1,13 +1,7 @@
 package photos.niyo.com.photosshare;
 
 import android.database.Cursor;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.util.Log;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
 
@@ -42,6 +36,8 @@ public class Folder {
     private Long mStartDate;
     private Long mEndDate;
     private String mSharedWith;
+    private String mIsRsvp;
+    private String mOwners;
 
     public String getId() {
         return mId;
@@ -74,6 +70,14 @@ public class Folder {
     public void setSharedWith(String mSharedWith) {
         Log.d(LOG_TAG, "setSharedWith for folder: "+mName+" ["+mSharedWith+"]");
         this.mSharedWith = mSharedWith;
+    }
+
+    public String isRsvp() {
+        return mIsRsvp;
+    }
+
+    public void setIsRsvp(String isRsvp) {
+        mIsRsvp = isRsvp;
     }
 
     @Override
@@ -114,6 +118,7 @@ public class Folder {
         int colStartDateIndex = cursor.getColumnIndex(PhotosShareColumns.START_DATE);
         int colEndDateIndex = cursor.getColumnIndex(PhotosShareColumns.END_DATE);
         int colSharedWith = cursor.getColumnIndex(PhotosShareColumns.SHARED_WITH);
+        int colOwner = cursor.getColumnIndex(PhotosShareColumns.OWNERS);
         String createdAt = cursor.getString(colCreatedAtIndex);
         Folder folder = new Folder();
         folder.setName(foldeName);
@@ -123,8 +128,16 @@ public class Folder {
         folder.setIsActive(isActive);
         folder.setId(folderId);
         folder.setSharedWith(cursor.getString(colSharedWith));
+        folder.setOwners(cursor.getString(colOwner));
 
         return folder;
     }
 
+    public String getOwners() {
+        return mOwners;
+    }
+
+    public void setOwners(String owners) {
+        this.mOwners = owners;
+    }
 }

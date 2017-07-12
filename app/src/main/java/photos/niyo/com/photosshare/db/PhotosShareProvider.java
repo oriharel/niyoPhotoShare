@@ -42,6 +42,8 @@ public class PhotosShareProvider extends ContentProvider {
         sFoldersProjectionMap.put(PhotosShareColumns.LOCATION, PhotosShareColumns.LOCATION);
         sFoldersProjectionMap.put(PhotosShareColumns.START_DATE, PhotosShareColumns.START_DATE);
         sFoldersProjectionMap.put(PhotosShareColumns.END_DATE, PhotosShareColumns.END_DATE);
+        sFoldersProjectionMap.put(PhotosShareColumns.OWNERS, PhotosShareColumns.OWNERS);
+        sFoldersProjectionMap.put(PhotosShareColumns.IS_RSVP, PhotosShareColumns.IS_RSVP);
 
 
         sUsersProjectionMap = new HashMap<>();

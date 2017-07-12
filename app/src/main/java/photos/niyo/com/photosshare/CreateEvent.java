@@ -27,6 +27,7 @@ import android.widget.Toast;
 
 import com.android.ex.chips.BaseRecipientAdapter;
 import com.android.ex.chips.RecipientEditTextView;
+import com.android.ex.chips.recipientchip.DrawableRecipientChip;
 import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -47,6 +48,7 @@ import com.google.api.services.drive.model.Permission;
 import com.robertlevonyan.views.chip.Chip;
 
 import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -69,7 +71,7 @@ import static photos.niyo.com.photosshare.MainActivity.REQUEST_GOOGLE_PLAY_SERVI
 public class CreateEvent extends AppCompatActivity implements DatePickerFragment.DatePickerFragmentListener {
 
     public static final String LOG_TAG = CreateEvent.class.getSimpleName();
-    private Folder mEditedFolder;
+//    private Folder mEditedFolder;
     private static String START_DATE_TAG = "startDate";
     private static String END_DATE_TAG = "endDate";
 
@@ -91,33 +93,38 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
             ab.setDisplayHomeAsUpEnabled(true);
         }
 
-        Button createBtn = (Button)findViewById(R.id.createFolderBtn);
+        final Button createBtn = (Button)findViewById(R.id.createFolderBtn);
         createBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d(LOG_TAG, "createBtn clicked");
+                createBtn.setVisibility(View.GONE);
+                findViewById(R.id.createProgress).setVisibility(View.VISIBLE);
                 EditText eventNameET = (EditText)findViewById(R.id.eventName);
                 createOrUpdateEventFolder(eventNameET);
             }
         });
 
-        String folderId = getIntent().getStringExtra(PhotosShareColumns.FOLDER_ID);
+        findViewById(R.id.createProgress).setVisibility(View.GONE);
 
-        ServiceCaller caller = new ServiceCaller() {
-            @Override
-            public void success(Object data) {
-                Folder folder = (Folder)data;
-
-                renderData(folder);
-            }
-
-            @Override
-            public void failure(Object data, String description) {
-
-            }
-        };
-
-        GetFolderFromDbTask task = new GetFolderFromDbTask(this, caller);
-        task.execute(folderId);
+//        String folderId = getIntent().getStringExtra(PhotosShareColumns.FOLDER_ID);
+//
+//        ServiceCaller caller = new ServiceCaller() {
+//            @Override
+//            public void success(Object data) {
+//                Folder folder = (Folder)data;
+//
+//                renderData(folder);
+//            }
+//
+//            @Override
+//            public void failure(Object data, String description) {
+//
+//            }
+//        };
+//
+//        GetFolderFromDbTask task = new GetFolderFromDbTask(this, caller);
+//        task.execute(folderId);
         initInviteesEditTextPermission();
 
         String editedFolderId = getIntent().getStringExtra(PhotosShareColumns.FOLDER_ID);
@@ -125,8 +132,9 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
         ServiceCaller getFolderCaller = new ServiceCaller() {
             @Override
             public void success(Object data) {
-                mEditedFolder = (Folder)data;
-                fetchWritersFromDb();
+                Folder folder = (Folder)data;
+                renderData(folder);
+                fetchWritersFromDb(folder);
             }
 
             @Override
@@ -167,7 +175,7 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
         });
     }
 
-    private void fetchWritersFromDb() {
+    private void fetchWritersFromDb(Folder editedFolder) {
         ServiceCaller usersCaller = new ServiceCaller() {
             @Override
             public void success(Object data) {
@@ -183,11 +191,11 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
 
         GetUsersFromDbTask task = new GetUsersFromDbTask(this, usersCaller);
 
-        if (mEditedFolder.getSharedWith() != null) {
-            task.execute(mEditedFolder.getSharedWith().split(","));
+        if (editedFolder.getSharedWith() != null) {
+            task.execute(editedFolder.getSharedWith().split(","));
         }
         else {
-            Log.d(LOG_TAG, "folder "+mEditedFolder.getName()+" has no shared with writers");
+            Log.d(LOG_TAG, "folder "+editedFolder.getName()+" has no shared with writers");
         }
 
     }
@@ -197,6 +205,7 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
         ViewGroup writersGroup = (ViewGroup)findViewById(R.id.writersContainer);
         for (User user :
                 folderWriters) {
+            Log.d(LOG_TAG, "adding writer "+user.getEmailAddress()+" ("+user.getDisplayName()+")");
             Chip chip = new Chip(this);
             FlexboxLayout.LayoutParams params =
                     new FlexboxLayout.LayoutParams(FlexboxLayout.LayoutParams.WRAP_CONTENT,
@@ -261,6 +270,16 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
         EditText nameET = (EditText)findViewById(R.id.eventName);
         nameET.setText(folder.getName());
 
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(folder.getStartDate());
+        DateFormat sdf = DateFormat.getDateInstance();
+        EditText startDate = (EditText)findViewById(R.id.startText);
+        startDate.setText(sdf.format(cal.getTime()));
+
+        cal.setTimeInMillis(folder.getEndDate());
+        EditText endDate = (EditText)findViewById(R.id.endText);
+        endDate.setText(sdf.format(cal.getTime()));
+
     }
 
     private void createPermission() {
@@ -280,12 +299,14 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
                 final ServiceCaller usersCaller = new ServiceCaller() {
                     @Override
                     public void success(Object data) {
-
+                        Log.d(LOG_TAG, "folder created and permissions granted");
+                        finish();
                     }
 
                     @Override
                     public void failure(Object data, String description) {
-
+                        findViewById(R.id.createProgress).setVisibility(View.GONE);
+                        findViewById(R.id.createFolderBtn).setVisibility(View.VISIBLE);
                     }
                 };
 
@@ -296,21 +317,17 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
                         User[] users = (User[])data;
 
                         InsertUsersToDbTask usersTask = new InsertUsersToDbTask(v.getContext(), usersCaller);
-
                         usersTask.execute(users);
-
                     }
 
                     @Override
                     public void failure(Object data, String description) {
-
+                        findViewById(R.id.createProgress).setVisibility(View.GONE);
+                        findViewById(R.id.createFolderBtn).setVisibility(View.VISIBLE);
                     }
                 };
                 new MakePermissionRequest(credential, caller, v).execute(mFolderId);
             }
-
-
-
         }
         else {
             Log.e(LOG_TAG, "Error. folder id is null");
@@ -321,7 +338,11 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
     public void onFinishDatePickerDialog(int year, int month, int day, String tag) {
         int viewId = tag.equals(START_DATE_TAG) ? R.id.startText : R.id.endText;
         EditText dateText = (EditText)findViewById(viewId);
-        dateText.setText(day+"/"+month+"/"+year);
+        Calendar cal = Calendar.getInstance();
+        cal.set(year, month, day);
+        DateFormat sdf = DateFormat.getDateInstance();
+        dateText.setText(sdf.format(cal.getTime()));
+        dateText.setTag(String.valueOf(cal.getTimeInMillis()));
     }
 
     private class MakePermissionRequest extends AsyncTask<String, Void, User[]> {
@@ -390,23 +411,24 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
             // Get a list of up to 10 files.
             Log.d(LOG_TAG, "createPermissionBatch started");
             BatchRequest batch = mService.batch();
-            EditText et = (EditText)findViewById(R.id.inviteEditBox);
-            String inviteesStr = et.getEditableText().toString();
-            String[] invitees = inviteesStr.split(",");
+            RecipientEditTextView et = (RecipientEditTextView)findViewById(R.id.inviteEditBox);
+            DrawableRecipientChip[] recipientChips = et.getRecipients();
             List<User> users = new ArrayList<>();
-
-            for (String invitee :
-                    invitees) {
+            for (DrawableRecipientChip recipient :
+                    recipientChips) {
+                Log.d(LOG_TAG, "creating permission to "+recipient.getEntry().getDestination());
                 Permission userPermission = new Permission()
                         .setType("user")
                         .setRole("writer")
-                        .setEmailAddress(invitee);
+                        .setEmailAddress(recipient.getEntry().getDestination());
                 mService.permissions().create(fileId, userPermission)
                         .setFields("id")
                         .queue(batch, callback);
 
                 User dbUser = new User();
-                dbUser.setEmailAddress(invitee);
+                dbUser.setEmailAddress(recipient.getEntry().getDestination());
+                dbUser.setDisplayName(recipient.getEntry().getDisplayName());
+//                dbUser.setPhotoLink(recipient.getEntry().getPhotoBytes());
                 users.add(dbUser);
             }
 
@@ -508,6 +530,7 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
             ServiceCaller caller = new ServiceCaller() {
                 @Override
                 public void success(Object data) {
+                    Log.d(LOG_TAG, "success creating folder in drive. now db...");
                     Folder createdFolder = (Folder)data;
                     if (getIntent().getStringExtra(PhotosShareColumns.FOLDER_ID) != null) {
                         updateFolderToDb(createdFolder);
@@ -523,8 +546,17 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
                     Log.e(LOG_TAG, "Error occured while creating folder in Drive");
                 }
             };
-
-            new MakeRequestTask(credential, caller, this).execute(folderName);
+            String[] params = new String[3];
+            params[0] = folderName;
+            EditText startDateText = (EditText)findViewById(R.id.startText);
+            EditText endDateText = (EditText)findViewById(R.id.endText);
+            params[1] = (String)startDateText.getTag();
+            params[2] = (String)endDateText.getTag();
+            new MakeRequestTask(credential, caller, this).execute(params);
+        }
+        else {
+            findViewById(R.id.createProgress).setVisibility(View.GONE);
+            findViewById(R.id.createFolderBtn).setVisibility(View.VISIBLE);
         }
     }
 
@@ -539,7 +571,8 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
 
             @Override
             public void failure(Object data, String description) {
-
+                findViewById(R.id.createProgress).setVisibility(View.GONE);
+                findViewById(R.id.createFolderBtn).setVisibility(View.VISIBLE);
             }
         };
 
@@ -573,7 +606,7 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
         protected Folder doInBackground(String... params) {
             Log.d(LOG_TAG, "[MakeRequestTask] doInBackground started");
             try {
-                return createFolder(params[0]);
+                return createFolder(params);
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Error!! " ,e);
                 mLastError = e;
@@ -588,26 +621,26 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
          *         found.
          * @throws IOException
          */
-        private Folder createFolder(String folderName) throws IOException {
+        private Folder createFolder(String... params) throws IOException {
             // Get a list of up to 10 files.
             Log.d(LOG_TAG, "createFolder started");
 
             Folder createdFolder = new Folder();
-            createdFolder.setName(folderName);
+            createdFolder.setName(params[0]);
             Calendar cal = Calendar.getInstance();
             Long now = cal.getTimeInMillis();
-            Long startDate = now;
-            cal.add(Calendar.DAY_OF_WEEK, 3);
-            Long end = cal.getTimeInMillis();
+//            Long startDate = now;
+//            cal.add(Calendar.DAY_OF_WEEK, 3);
+//            Long end = cal.getTimeInMillis();
 
 
             File fileMetadata = new File();
-            fileMetadata.setName(folderName);
+            fileMetadata.setName(params[0]);
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
             Map<String, String> props = new HashMap<>();
             props.put(Folder.APP_ID, getPackageName());
-            props.put("start_date", startDate.toString());
-            props.put("end_date", end.toString());
+            props.put("start_date", params[1]);
+            props.put("end_date", params[2]);
             props.put("created_at", now.toString());
             fileMetadata.setAppProperties(props);
             File file;
@@ -628,9 +661,11 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
 
             createdFolder.setId(file.getId());
             createdFolder.setCreatedAt(now);
-            createdFolder.setStartDate(startDate);
-            createdFolder.setEndDate(end);
-
+            createdFolder.setStartDate(Long.valueOf(params[1]));
+            createdFolder.setEndDate(Long.valueOf(params[2]));
+            SharedPreferences pref = getApplicationContext().getSharedPreferences("app", Context.MODE_PRIVATE);
+            String accountName = pref.getString(PREF_ACCOUNT_NAME, null);
+            createdFolder.setOwners(accountName);
             EditText et = (EditText)findViewById(R.id.inviteEditBox);
             String inviteesStr = et.getEditableText().toString();
             createdFolder.setSharedWith(inviteesStr);
@@ -714,7 +749,8 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
 
             @Override
             public void failure(Object data, String description) {
-
+                findViewById(R.id.createProgress).setVisibility(View.GONE);
+                findViewById(R.id.createFolderBtn).setVisibility(View.VISIBLE);
             }
         };
 

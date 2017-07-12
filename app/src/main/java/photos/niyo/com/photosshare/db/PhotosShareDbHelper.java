@@ -24,6 +24,8 @@ public class PhotosShareDbHelper extends SQLiteOpenHelper {
                     + PhotosShareColumns.START_DATE + " BIGINT, "
                     + PhotosShareColumns.END_DATE + " BIGINT, "
                     + PhotosShareColumns.SHARED_WITH + " TEXT, "
+                    + PhotosShareColumns.IS_RSVP + " TEXT, "
+                    + PhotosShareColumns.OWNERS + " TEXT, "
                     + PhotosShareColumns.LOCATION + " Decimal(9,6));";
 
     private static final String USERS_TABLE_CREATE =
