@@ -44,7 +44,9 @@ import java.util.Calendar;
 import java.util.List;
 
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
+import photos.niyo.com.photosshare.db.User;
 import photos.niyo.com.photosshare.tasks.GetActiveFolderFromDbTask;
+import photos.niyo.com.photosshare.tasks.GetUsersFromDbTask;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
@@ -136,14 +138,31 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private void showActiveFolder() {
         Log.d(LOG_TAG, "[showActiveFolder] started");
+        final FolderViewHolder holder = new FolderViewHolder(findViewById(R.id.folderCard));
+        final ServiceCaller usersCaller = new ServiceCaller() {
+            @Override
+            public void success(Object data) {
+                User[] attendees = (User[])data;
+                holder.addAttendees(attendees);
+            }
+
+            @Override
+            public void failure(Object data, String description) {
+
+            }
+        };
+
+        final Context context = this;
         ServiceCaller activeCaller = new ServiceCaller() {
             @Override
             public void success(Object data) {
                 Log.d(LOG_TAG, "[showActiveFolder] success");
                 Folder activeFolder = (Folder)data;
                 activeFolder.setIsActive(true);
+                GetUsersFromDbTask usersTask = new GetUsersFromDbTask(context, usersCaller, MainActivity.class.getSimpleName());
+                usersTask.execute(activeFolder.getSharedWith());
                 findViewById(R.id.folderCard).setVisibility(View.VISIBLE);
-                FolderViewHolder holder = new FolderViewHolder(findViewById(R.id.folderCard));
+
                 holder.bindFolder(activeFolder);
             }
 
@@ -462,12 +481,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         Log.d(LOG_TAG, "onLoadFinished started");
         mFoldersList.clear();
+        Log.d(LOG_TAG, "currently there are "+mFoldersList.size()+" shown folders. results from db: "+cursor.getCount());
 
         if (cursor.moveToFirst()) {
             findViewById(R.id.archivedFoldersList).setVisibility(View.VISIBLE);
             findViewById(R.id.archivedListLabel).setVisibility(View.VISIBLE);
             while (!cursor.isAfterLast()) {
                 Folder folder = Folder.createFolderFromCursor(cursor, false);
+                Log.d(LOG_TAG, "adding folder: "+folder.getId());
                 mFoldersList.add(folder);
                 cursor.moveToNext();
             }

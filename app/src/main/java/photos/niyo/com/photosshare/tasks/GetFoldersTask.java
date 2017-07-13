@@ -116,6 +116,6 @@ public class GetFoldersTask extends DriveAPIsTask {
         InsertUsersToDbTask task = new InsertUsersToDbTask(mContext, insertUsersCaller);
         task.execute(writers.toArray(new User[writers.size()]));
         Log.d(LOG_TAG, "writers result is "+result);
-        return TextUtils.join(",", result);
+        return TextUtils.join(",", GetUsersFromDbTask.padEmailAddress(result));
     }
 }

@@ -17,8 +17,8 @@ public class PhotosShareDbHelper extends SQLiteOpenHelper {
 
     private static final String FOLDERS_TABLE_CREATE =
             "create table " + FOLDERS_TABLE_NAME + " ("
-                    + PhotosShareColumns._ID + " integer primary key autoincrement, "
-                    + PhotosShareColumns.FOLDER_ID + " TEXT, "
+                    + PhotosShareColumns._ID + " integer, "
+                    + PhotosShareColumns.FOLDER_ID + " TEXT primary key, "
                     + PhotosShareColumns.FOLDER_NAME + " TEXT, "
                     + PhotosShareColumns.CREATE_AT + " BIGINT, "
                     + PhotosShareColumns.START_DATE + " BIGINT, "
@@ -30,9 +30,9 @@ public class PhotosShareDbHelper extends SQLiteOpenHelper {
 
     private static final String USERS_TABLE_CREATE =
             "create table " + USERS_TABLE_NAME + " ("
-                    + UsersColumns._ID + " integer primary key autoincrement, "
+                    + UsersColumns._ID + " integer, "
                     + UsersColumns.ID + " TEXT, "
-                    + UsersColumns.EMAIL_ADDRESS + " TEXT, "
+                    + UsersColumns.EMAIL_ADDRESS + " TEXT primary key , "
                     + UsersColumns.DISPLAY_NAME + " TEXT, "
                     + UsersColumns.PHOTO_LINK + " TEXT);";
 

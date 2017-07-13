@@ -22,10 +22,11 @@
             android:layout_marginTop="@dimen/chip_icon_horizontal_margin"
             app:cardCornerRadius="4dp">
 
-            <RelativeLayout
+            <LinearLayout
                 android:id="@+id/folderLayout"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
                 <FrameLayout
                     android:id="@+id/folder_event_frame"
@@ -68,39 +69,46 @@
 
                 </FrameLayout>
 
-                <TextView
-                    android:id="@+id/folder_description"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@id/folder_event_frame"
-                    android:layout_gravity="start"
-                    android:paddingBottom="16dp"
-                    android:paddingEnd="16dp"
-                    android:paddingStart="16dp"
-                    android:paddingTop="16dp"
-                    android:text="Created at..."
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/endDateView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@id/folder_event_frame"
-                    android:layout_gravity="start"
-                    android:layout_toRightOf="@id/folder_description"
-                    android:paddingBottom="16dp"
-                    android:paddingEnd="16dp"
-                    android:paddingStart="16dp"
-                    android:paddingTop="16dp"
-                    android:text="TextView"
-                    android:textSize="16sp" />
-
                 <View
                     android:id="@+id/card_view_line"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_below="@id/folder_description"
                     android:background="@color/divider_color" />
+
+                <com.google.android.flexbox.FlexboxLayout
+                    android:id="@+id/attendeesContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="@dimen/side_margin"
+                    android:layout_marginRight="@dimen/side_margin"
+                    android:layout_marginTop="10dp"
+                    app:flexWrap="wrap">
+
+                    <!--<com.robertlevonyan.views.chip.Chip-->
+                    <!--android:layout_width="wrap_content"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--app:chipText="Ori Harel"-->
+                    <!--android:layout_margin="10dp"-->
+                    <!--app:closable="true">-->
+
+                    <!--</com.robertlevonyan.views.chip.Chip>-->
+                    <!--<com.robertlevonyan.views.chip.Chip-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--app:chipText="Ori Harel"-->
+                    <!--android:layout_margin="10dp"-->
+                    <!--app:closable="true">-->
+
+                    <!--</com.robertlevonyan.views.chip.Chip>-->
+                    <!--<com.robertlevonyan.views.chip.Chip-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--app:chipText="Ori Harel"-->
+                    <!--android:layout_margin="10dp"-->
+                    <!--app:closable="true">-->
+
+
+                </com.google.android.flexbox.FlexboxLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -133,7 +141,7 @@
                         android:textSize="24sp" />
                 </LinearLayout>
 
-            </RelativeLayout>
+            </LinearLayout>
 
 
         </android.support.v7.widget.CardView>

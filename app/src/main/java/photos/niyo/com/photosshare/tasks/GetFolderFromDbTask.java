@@ -20,7 +20,7 @@ public class GetFolderFromDbTask extends AsyncTask<String, Void, Folder> {
 
     private Context mContext;
     private ServiceCaller mCaller;
-    public static final String LOG_TAG = GetActiveFolderFromDbTask.class.getSimpleName();
+    public static final String LOG_TAG = GetFolderFromDbTask.class.getSimpleName();
 
     public GetFolderFromDbTask(Context context, ServiceCaller caller) {
         mContext = context;

@@ -46,21 +46,21 @@ public class ArchivedFolderViewHolder extends RecyclerView.ViewHolder implements
         mFolder = folder;
         mFolderName.setText(folder.getName());
 
-        try {
-            FileInputStream fileIn = mFolderImage.getContext().
-                    openFileInput(DownloadFileTask.LATEST_FILE_NAME);
-            Bitmap previewImageBM = BitmapFactory.decodeStream(fileIn);
-            if (previewImageBM != null) {
-                Log.d(LOG_TAG, "success loading bitmap file preview");
-                mFolderImage.setImageBitmap(previewImageBM);
-            }
-            else {
-                String filePath = mFolderImage.getContext().getFilesDir()+"/"+
-                        DownloadFileTask.LATEST_FILE_NAME;
-                Log.d(LOG_TAG, "fail to load file preview bitmap ("+filePath+")");
-            }
-        } catch (FileNotFoundException e) {
-            Log.d(LOG_TAG, "can't find file "+DownloadFileTask.LATEST_FILE_NAME);
-        }
+//        try {
+//            FileInputStream fileIn = mFolderImage.getContext().
+//                    openFileInput(DownloadFileTask.LATEST_FILE_NAME);
+//            Bitmap previewImageBM = BitmapFactory.decodeStream(fileIn);
+//            if (previewImageBM != null) {
+//                Log.d(LOG_TAG, "success loading bitmap file preview");
+//                mFolderImage.setImageBitmap(previewImageBM);
+//            }
+//            else {
+//                String filePath = mFolderImage.getContext().getFilesDir()+"/"+
+//                        DownloadFileTask.LATEST_FILE_NAME;
+//                Log.d(LOG_TAG, "fail to load file preview bitmap ("+filePath+")");
+//            }
+//        } catch (FileNotFoundException e) {
+//            Log.d(LOG_TAG, "can't find file "+DownloadFileTask.LATEST_FILE_NAME);
+//        }
     }
 }

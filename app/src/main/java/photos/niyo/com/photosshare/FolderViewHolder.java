@@ -14,6 +14,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.flexbox.FlexboxLayout;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.text.DateFormat;
@@ -21,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 import photos.niyo.com.photosshare.db.PhotosShareColumns;
+import photos.niyo.com.photosshare.db.User;
 import photos.niyo.com.photosshare.tasks.DeleteFolderFromDbTask;
 import photos.niyo.com.photosshare.tasks.DeleteFolderTask;
 
@@ -36,24 +39,22 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
     private static final String NOT_EMPTY = "not_empty";
     private ImageView mFolderImage;
     private TextView mFolderName;
-    private TextView mFolderDescription;
     private Folder mFolder;
     private TextView mDeleteAction;
     private TextView mEditAction;
-    private TextView mEndDateView;
     private TextView mPhotoOwner;
     private View mFolderView;
+    private FlexboxLayout mAttendeesContainer;
 
     public FolderViewHolder(View v) {
         super(v);
         mFolderView = v;
         mFolderImage = (ImageView) v.findViewById(R.id.folder_event_image);
         mFolderName = (TextView) v.findViewById(R.id.folder_event_title);
-        mFolderDescription = (TextView) v.findViewById(R.id.folder_description);
-        mEndDateView = (TextView) v.findViewById(R.id.endDateView);
         mDeleteAction = (TextView)v.findViewById(R.id.delete_folder);
         mEditAction = (TextView)v.findViewById(R.id.edit_folder);
         mPhotoOwner = (TextView)v.findViewById(R.id.photo_owner);
+        mAttendeesContainer = (FlexboxLayout)v.findViewById(R.id.attendeesContainer);
         mDeleteAction.setOnClickListener(this);
         mEditAction.setOnClickListener(this);
         v.setOnClickListener(this);
@@ -121,15 +122,7 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mFolder = folder;
         mFolderName.setText(folder.getName());
         mPhotoOwner.setVisibility(View.GONE);
-        Calendar cal = Calendar.getInstance();
-        Log.d(LOG_TAG, "setting start date: "+folder.getStartDate());
-        cal.setTimeInMillis(folder.getStartDate());
 
-        DateFormat sdf = DateFormat.getDateInstance();
-        mFolderDescription.setText("Start: "+sdf.format(cal.getTime()));
-        Log.d(LOG_TAG, "setting end date: "+folder.getEndDate());
-        cal.setTimeInMillis(folder.getEndDate());
-        mEndDateView.setText("End: "+sdf.format(cal.getTime()));
 
         if (mFolder.isActive()) {
             try {
@@ -178,7 +171,13 @@ public class FolderViewHolder extends RecyclerView.ViewHolder implements View.On
         mFolderName.setText(R.string.noActiveEvent);
         mDeleteAction.setVisibility(View.GONE);
         mEditAction.setVisibility(View.GONE);
-        mFolderDescription.setText(R.string.clickToCreate);
-        mEndDateView.setText("");
+    }
+
+    public void addAttendees(User[] attendees) {
+        mAttendeesContainer.removeAllViews();
+        CreateEvent.initWritersContainer(attendees,
+                mAttendeesContainer,
+                mAttendeesContainer.getContext(),
+                false);
     }
 }

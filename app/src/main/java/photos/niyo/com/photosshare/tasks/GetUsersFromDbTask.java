@@ -23,16 +23,25 @@ public class GetUsersFromDbTask extends AsyncTask<String, Void, User[]> {
     public static final String LOG_TAG = GetUsersFromDbTask.class.getSimpleName();
     private Context mContext;
     private ServiceCaller mCaller;
+    private String mCallerClass;
 
-    public GetUsersFromDbTask(Context context, ServiceCaller caller) {
+    public GetUsersFromDbTask(Context context, ServiceCaller caller, String callerClass) {
         mContext = context;
         mCaller = caller;
+        mCallerClass = callerClass;
     }
     @Override
     protected User[] doInBackground(String... params) {
-        String userEmailsStr = TextUtils.join(",", padEmailAddress(params));
+        String userEmailsStr;
+        if (params[0].contains(",")) {
+            userEmailsStr = params[0];
+        }
+        else {
+            userEmailsStr = TextUtils.join(",", params);
+        }
+
         String selection = UsersColumns.EMAIL_ADDRESS+" in ("+userEmailsStr+")";
-        Log.d(LOG_TAG, "doInBackground started with selector: "+selection);
+        Log.d(LOG_TAG, "doInBackground started with selector: "+selection+" called from "+mCallerClass);
         Cursor cursor = mContext.getContentResolver().query(Constants.USERS_URI,
                 Constants.USERS_PROJECTION, selection, null, UsersColumns.DISPLAY_NAME);
         List<User> result = new ArrayList<>();
@@ -64,10 +73,19 @@ public class GetUsersFromDbTask extends AsyncTask<String, Void, User[]> {
         return result.toArray(new User[result.size()]);
     }
 
-    private String[] padEmailAddress(String[] params) {
+    public static String[] padEmailAddress(String[] params) {
         String[] result = new String[params.length];
         for (int i = 0; i < params.length; i++){
             result[i] = "'"+params[i]+"'";
+        }
+
+        return result;
+    }
+
+    public static String[] padEmailAddress(List<String> params) {
+        String[] result = new String[params.size()];
+        for (int i = 0; i < params.size(); i++) {
+            result[i] = "'"+params.get(i)+"'";
         }
 
         return result;
