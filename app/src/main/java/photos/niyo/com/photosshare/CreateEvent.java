@@ -372,16 +372,14 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
                                   HttpHeaders responseHeaders)
                     throws IOException {
                 // Handle error
-                Log.e(LOG_TAG, "mService.permissions(): "+e.getMessage());
-                Snackbar.make(mV, "Unable to grant permission", Snackbar.LENGTH_LONG);
+                Log.e(LOG_TAG, "Unable to grant permission: "+e.getMessage());
             }
 
             @Override
             public void onSuccess(Permission permission,
                                   HttpHeaders responseHeaders)
                     throws IOException {
-                Log.d(LOG_TAG, "mService.permissions() Permission ID: " + permission.getId());
-                Snackbar.make(mV, "Permission granted for "+permission.getEmailAddress(), Snackbar.LENGTH_LONG);
+                Log.d(LOG_TAG, "Permission granted Permission ID: " + permission.getId());
             }
         };
 
@@ -437,13 +435,20 @@ public class CreateEvent extends AppCompatActivity implements DatePickerFragment
             String[] existingWriters = folder.getSharedWith().split(",");
             for (String existingWriter :
                     existingWriters) {
-                Permission userPermission = new Permission()
-                        .setType("user")
-                        .setRole("writer")
-                        .setEmailAddress(existingWriter);
-                mService.permissions().create(folder.getId(), userPermission)
-                        .setFields("id")
-                        .queue(batch, callback);
+                String existingWriterMinusQuotes = existingWriter.replace("'", "");
+                if (!folder.getOwners().contains(existingWriterMinusQuotes)) {
+                    Permission userPermission = new Permission()
+                            .setType("user")
+                            .setRole("writer")
+                            .setEmailAddress(existingWriterMinusQuotes);
+                    mService.permissions().create(folder.getId(), userPermission)
+                            .setFields("id")
+                            .queue(batch, callback);
+                }
+                else {
+                    Log.d(LOG_TAG, "no need to grant permission to one of the owners ("+existingWriterMinusQuotes+")");
+                }
+
             }
 
 
